@@ -24,6 +24,15 @@ def dfdx(x):
     return grad
 
 
+# define objective gradient
+def np_dfdx(x):
+    x1 = x[0]
+    x2 = x[1]
+    grad = []
+    grad.append(2.0 * x1 - 2.0 * x2)
+    grad.append(-2.0 * x1 + 8.0 * x2)
+    return np.array(grad)
+
 # Exact 2nd derivatives (hessian)
 H = [[2.0, -2.0], [-2.0, 8.0]]
 
@@ -165,7 +174,6 @@ for i in range(n):
     h[i + 1] = h[i] + part3 - part9
 
 plt.plot(xq[:, 0], xq[:, 1], 'r-o',label="QN")
-plt.legend()
 
 '''
 
@@ -197,6 +205,15 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
     x_k = x_0
     B_k = B_0
     cond = True
+
+    # Initialize gradient storage
+    # g = np.zeros((k + 1, 2))
+    # g[0] = dfdx(xq[0])
+
+    # Initalize the plots
+    x_iterates = np.zeros((k + 1, 2))
+    x_iterates[0] = x_start
+
     while cond:
 
         # new iterates
@@ -206,7 +223,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
         y_k = gradient(x_k_and_1) - gradient(x_k)
 
         s_k = x_k_and_1 - x_k
-
+        c = s_k # fix to a fixed method
         # compute the next B_{k+1} iteration
         B_k_and_1 = B_k + np.matmul(y_k - np.matmul(B_k,s_k), np.transpose(c)/np.dot(c, s_k))
 
@@ -215,15 +232,20 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
 
         # update the matrix:
         B_k = B_k_and_1
+        x_k = x_k_and_1
 
         # logic for checking whether to terminate or not
         not_done = True
-        cond = counter < k and not_done
         counter += 1
+        cond = counter < k and not_done
 
-        # counter:
+        x_iterates[counter] = x_k
+    return x_k, x_iterates
 
-    pass
+qn_soln , qn_iterates = general_rank_1_QN(8,None,np_dfdx,None,x_start)
+# print()
+plt.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
+plt.legend()
 
 # Save the figure as a PNG
 plt.savefig('contour.png')
