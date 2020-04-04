@@ -217,7 +217,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
     while cond:
 
         # new iterates
-        x_k_and_1  = x_k - np.linalg.solve(B_k, gradient(x_k)) #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
+        x_k_and_1  = x_k - -np.dot(alpha[counter],np.linalg.solve(B_k, gradient(x_k))) #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
 
         # compute k+1 quantities
         y_k = gradient(x_k_and_1) - gradient(x_k)
@@ -238,7 +238,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
         not_done = True
         counter += 1
         cond = counter < k and not_done
-
+        print(x_k)
         x_iterates[counter] = x_k
     return x_k, x_iterates
 
