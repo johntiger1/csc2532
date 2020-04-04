@@ -260,9 +260,67 @@ print(qn_soln)
 ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
 ax.legend()
 
+def rank_1_H_update(H,s,y,d):
+    return H + np.outer((s-np.matmul(H,y)), d)/np.inner(d,y)
+
+"""
+args
+    -k: Max iterations
+    -f: Function to optimize
+    -gradient: gradient of f
+    -d: "broyden2" for d=y; or "mccormick" for d=s 
+    -x_0: startint x
+    -H_0: starting H
+    -noise: Function from step size to noise, default is no noise
+"""
+def general_rank_1_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv([[2.3, -2.50], [-2.5, 7]]), noise=lambda s:0):
+    counter = 0
+    x_k = x_0
+    H_k = H_0
+
+    if d == "broyden2":
+        def update(H,s,y):
+            return rank_1_H_update(H,s,y,y+noise(s))
+    else:
+        assert(d == "mccormick")
+        def update(H,s,y):
+            return rank_1_H_update(H,s,y,s+noise(s))
+
+    # Initalize the plots
+    x_iterates = np.zeros((k + 1, 2))
+    x_iterates[0] = x_0
+
+    s_k = [9999999, 99999999] # junk initialization
+
+    while counter < k:
+        x_k_and_1  = x_k - np.matmul(H_k, gradient(x_k))
+        y_k = gradient(x_k_and_1) - gradient(x_k)
+        s_k = x_k_and_1 - x_k
+
+        # Terminate if we have converged in finite steps
+        if not np.any(s_k):
+            break
+
+        # update the matrix:
+        H_k = update(H_k, s_k, y_k)
+        x_k = x_k_and_1
+
+        counter += 1
+        x_iterates[counter] = x_k
+
+    return x_k, x_iterates
+
+
+qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(8,f,np_dfdx,"mccormick",x_start)
+# Sample call with noise
+# qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(8,f,np_dfdx,"mccormick",x_start, noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]]))
+print("rank 1 H method returns")
+print(qn_H1_soln)
+ax.plot(qn_H1_iterates[:, 0], qn_H1_iterates[:, 1], 'm-o',label="QN-H (1973)")
+ax.legend()
+
 # Save the figure as a PNG
 fig.savefig('contour.png')
-
 
 '''examine spectral norm (induced l2 norm)'''
 I = np.array([[2.3, -2.50], [-2.5, 9]])
@@ -293,7 +351,7 @@ ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFG
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
 ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
-
+ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
 
 ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
