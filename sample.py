@@ -4,7 +4,8 @@
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
-
+import scipy
+import scipy.optimize
 
 # define objective function
 def f(x):
@@ -37,7 +38,7 @@ def np_dfdx(x):
 H = [[2.0, -2.0], [-2.0, 8.0]]
 
 # Start location
-x_start = [-3.0, 2.0]
+x_start = [-3.0, 3.0]
 
 # Design variables at mesh points
 i1 = np.arange(-4.0, 4.0, 0.1)
@@ -150,9 +151,13 @@ g[0] = dfdx(xq[0])
 h = np.zeros((n + 1, 2, 2))
 h[0] = [[1, 0.0], [0.0, 1]]
 for i in range(n):
+
+    search_dirn = np.linalg.solve(h[i], g[i])
     # Compute search direction and magnitude (dx)
     #  with dx = -alpha * inv(h) * grad
     delta_xq = -np.dot(alpha[i], np.linalg.solve(h[i], g[i]))
+    # delta_xq = - np.linalg.solve(h[i], g[i])
+
     xq[i + 1] = xq[i] + delta_xq
 
     # Get gradient update for next step
@@ -198,10 +203,11 @@ args:
 
 # we have H\delta = grad_x => solving for delta. But B approximates the hessian, not the hessian inverse
 def general_rank_1_QN(k,f,gradient,c,x_0):
-    alpha = np.linspace(0.1, 1.0, n)
-
+    # alpha = np.logspace(-1, 0, 100)
+    alpha = np.linspace(0.1, 1, 8)
+    # alpha = np.array((1/2, 1/4,1/8,1/16,1/32, 1/64))
     # our HESSIAN approximation (NOT hessian inverse)
-    B_0 = [[1.0, 0.0], [0.0, 1.0]]
+    B_0 = [[2.3, -2.50], [-2.5, 9]]
     counter = 0
     x_k = x_0
     B_k = B_0
@@ -213,23 +219,23 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
 
     # Initalize the plots
     x_iterates = np.zeros((k + 1, 2))
-    x_iterates[0] = x_start
+    x_iterates[0] = x_0
 
     while cond:
 
         # new iterates
-        x_k_and_1  = x_k - np.dot(alpha[counter],np.linalg.solve(B_k, gradient(x_k))) #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
-
+        search_direction = np.linalg.solve(B_k, gradient(x_k))
+        # step_size = scipy.optimize.line_search(f, gradient, x_k, search_direction )
+        x_k_and_1  = x_k - search_direction #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
         # compute k+1 quantities
         y_k = gradient(x_k_and_1) - gradient(x_k)
 
         s_k = x_k_and_1 - x_k
-        c = s_k # fix to a fixed method
+        c = y_k # fix to a fixed method
+
+
         # compute the next B_{k+1} iteration
-        B_k_and_1 = B_k + np.matmul(y_k - np.matmul(B_k,s_k), np.transpose(c)/np.dot(c, s_k))
-
-
-
+        B_k_and_1 = B_k + np.outer(y_k - np.matmul(B_k,s_k), np.transpose(c)/np.dot(c, s_k))
 
         # update the matrix:
         B_k = B_k_and_1
@@ -239,15 +245,27 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
         not_done = True
         counter += 1
         cond = counter < k and not_done
-        print(x_k)
+        # print(x_k)
         x_iterates[counter] = x_k
+
+        print(B_k)
     return x_k, x_iterates
 
-qn_soln , qn_iterates = general_rank_1_QN(4,None,np_dfdx,None,x_start)
+qn_soln , qn_iterates = general_rank_1_QN(8,f,np_dfdx,None,x_start)
+print(qn_soln)
 plt.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
 plt.legend()
 
 # Save the figure as a PNG
 plt.savefig('contour.png')
 
+
+'''examine spectral norm (induced l2 norm)'''
+I = np.array([[2.3, -2.50], [-2.5, 9]])
+H = np.array(H)
+diff = I - H
+H_inverse = np.linalg.inv(H)
+prod = np.linalg.norm(H_inverse,ord=2) * np.linalg.norm(diff,ord=2)
+print("Norm is " + str(prod )) # tight 1/2, not a constant?
+print(diff)
 plt.show()
