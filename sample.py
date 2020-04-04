@@ -166,6 +166,65 @@ for i in range(n):
 
 plt.plot(xq[:, 0], xq[:, 1], 'r-o',label="QN")
 plt.legend()
+
+'''
+
+Recall den => in ml4h stuff!
+General QN Rank 1 method as described in Broyden 1973
+We can also verify the subsequence of Hessian updates also converges
+
+===
+
+Given an initialization, and a function, will apply QN update rule iteratively to optimize the function.
+We DO NOT require access to the initial Hessian!
+
+But we do require access to the gradient
+
+args: 
+  - k: the number of QN steps to take
+  - f: the function to evaluate
+  - gradient: the gradient function that we can evaluate
+  - c: ["broyden's first", "davidon's method"] the method to use
+  - x0: the initial guess for the iterates
+'''
+
+# we have H\delta = grad_x => solving for delta. But B approximates the hessian, not the hessian inverse
+def general_rank_1_QN(k,f,gradient,c,x_0):
+
+    # our HESSIAN approximation (NOT hessian inverse)
+    B_0 = [[1.0, 0.0], [0.0, 1.0]]
+    counter = 0
+    x_k = x_0
+    B_k = B_0
+    cond = True
+    while cond:
+
+        # new iterates
+        x_k_and_1  = x_k - np.linalg.solve(B_k, gradient(x_k)) #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
+
+        # compute k+1 quantities
+        y_k = gradient(x_k_and_1) - gradient(x_k)
+
+        s_k = x_k_and_1 - x_k
+
+        # compute the next B_{k+1} iteration
+        B_k_and_1 = B_k + np.matmul(y_k - np.matmul(B_k,s_k), np.transpose(c)/np.dot(c, s_k))
+
+
+
+
+        # update the matrix:
+        B_k = B_k_and_1
+
+        # logic for checking whether to terminate or not
+        not_done = True
+        cond = counter < k and not_done
+        counter += 1
+
+        # counter:
+
+    pass
+
 # Save the figure as a PNG
 plt.savefig('contour.png')
 
