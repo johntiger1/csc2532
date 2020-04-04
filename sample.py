@@ -203,11 +203,8 @@ args:
 
 # we have H\delta = grad_x => solving for delta. But B approximates the hessian, not the hessian inverse
 def general_rank_1_QN(k,f,gradient,c,x_0):
-    # alpha = np.logspace(-1, 0, 100)
-    alpha = np.linspace(0.1, 1, 8)
-    # alpha = np.array((1/2, 1/4,1/8,1/16,1/32, 1/64))
     # our HESSIAN approximation (NOT hessian inverse)
-    B_0 = [[2.3, -2.50], [-2.5, 9]]
+    B_0 = [[2.3, -2.50], [-2.5, 7]]
     counter = 0
     x_k = x_0
     B_k = B_0
@@ -225,13 +222,12 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
 
         # new iterates
         search_direction = np.linalg.solve(B_k, gradient(x_k))
-        # step_size = scipy.optimize.line_search(f, gradient, x_k, search_direction )
         x_k_and_1  = x_k - search_direction #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
         # compute k+1 quantities
         y_k = gradient(x_k_and_1) - gradient(x_k)
 
         s_k = x_k_and_1 - x_k
-        c = y_k # fix to a fixed method
+        c = s_k # fix to a fixed method
 
 
         # compute the next B_{k+1} iteration
@@ -245,10 +241,8 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
         not_done = True
         counter += 1
         cond = counter < k and not_done
-        # print(x_k)
         x_iterates[counter] = x_k
 
-        print(B_k)
     return x_k, x_iterates
 
 qn_soln , qn_iterates = general_rank_1_QN(8,f,np_dfdx,None,x_start)
@@ -266,6 +260,6 @@ H = np.array(H)
 diff = I - H
 H_inverse = np.linalg.inv(H)
 prod = np.linalg.norm(H_inverse,ord=2) * np.linalg.norm(diff,ord=2)
-print("Norm is " + str(prod )) # tight 1/2, not a constant?
+print("Norm is " + str(prod )) # tight 1/2, not a constant? (but must be less than one
 print(diff)
 plt.show()
