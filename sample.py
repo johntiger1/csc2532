@@ -155,7 +155,7 @@ for i in range(n):
     search_dirn = np.linalg.solve(h[i], g[i])
     # Compute search direction and magnitude (dx)
     #  with dx = -alpha * inv(h) * grad
-    delta_xq = -np.dot(alpha[i], np.linalg.solve(h[i], g[i]))
+    delta_xq = -np.dot(1, np.linalg.solve(h[i], g[i]))
     # delta_xq = - np.linalg.solve(h[i], g[i])
 
     xq[i + 1] = xq[i] + delta_xq
@@ -179,7 +179,8 @@ for i in range(n):
     h[i + 1] = h[i] + part3 - part9
 
 plt.plot(xq[:, 0], xq[:, 1], 'r-o',label="QN")
-
+print("BFGS method returns")
+print(xq[-1,:])
 '''
 
 Recall den => in ml4h stuff!
@@ -242,6 +243,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
     return x_k, x_iterates
 
 qn_soln , qn_iterates = general_rank_1_QN(8,f,np_dfdx,None,x_start)
+print("rank 1 method returns")
 print(qn_soln)
 plt.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
 plt.legend()
