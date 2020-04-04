@@ -198,6 +198,7 @@ args:
 
 # we have H\delta = grad_x => solving for delta. But B approximates the hessian, not the hessian inverse
 def general_rank_1_QN(k,f,gradient,c,x_0):
+    alpha = np.linspace(0.1, 1.0, n)
 
     # our HESSIAN approximation (NOT hessian inverse)
     B_0 = [[1.0, 0.0], [0.0, 1.0]]
@@ -217,7 +218,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
     while cond:
 
         # new iterates
-        x_k_and_1  = x_k - -np.dot(alpha[counter],np.linalg.solve(B_k, gradient(x_k))) #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
+        x_k_and_1  = x_k - np.dot(alpha[counter],np.linalg.solve(B_k, gradient(x_k))) #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
 
         # compute k+1 quantities
         y_k = gradient(x_k_and_1) - gradient(x_k)
@@ -242,8 +243,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
         x_iterates[counter] = x_k
     return x_k, x_iterates
 
-qn_soln , qn_iterates = general_rank_1_QN(8,None,np_dfdx,None,x_start)
-# print()
+qn_soln , qn_iterates = general_rank_1_QN(4,None,np_dfdx,None,x_start)
 plt.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
 plt.legend()
 
