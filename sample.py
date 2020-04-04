@@ -319,6 +319,70 @@ print(qn_H1_soln)
 ax.plot(qn_H1_iterates[:, 0], qn_H1_iterates[:, 1], 'm-o',label="QN-H (1973)")
 ax.legend()
 
+# TODO: Can probably increase efficiency by moving division before outer products
+def rank_2_H_update(H,s,y,d):
+    Hy = np.matmul(H,y)
+    temp = np.outer(s-Hy,d)
+    ddT = np.outer(d,d)
+    dTy = np.inner(d,y)
+    return H + (temp + np.transpose(temp))/dTy - np.inner(y,s-Hy)*ddT/(dTy**2)
+
+"""
+args
+    -k: Max iterations
+    -f: Function to optimize
+    -gradient: gradient of f
+    -d: "greenstadt" for d=y; or "BFGS" for d=s 
+    -x_0: startint x
+    -H_0: starting H
+    -noise: Function from step size to noise, default is no noise
+"""
+def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv([[2.3, -2.50], [-2.5, 7]]), noise=lambda s:0):
+    counter = 0
+    x_k = x_0
+    H_k = H_0
+
+    if d == "greenstadt":
+        def update(H,s,y):
+            return rank_2_H_update(H,s,y,y+noise(s))
+    else:
+        assert(d == "BFGS")
+        def update(H,s,y):
+            return rank_2_H_update(H,s,y,s+noise(s))
+
+    # Initalize the plots
+    x_iterates = np.zeros((k + 1, 2))
+    x_iterates[0] = x_0
+
+    s_k = [9999999, 99999999] # junk initialization
+
+    while counter < k:
+        x_k_and_1  = x_k - np.matmul(H_k, gradient(x_k))
+        y_k = gradient(x_k_and_1) - gradient(x_k)
+        s_k = x_k_and_1 - x_k
+
+        # Terminate if we have converged in finite steps
+        if not np.any(s_k):
+            break
+
+        # update the matrix:
+        H_k = update(H_k, s_k, y_k)
+        x_k = x_k_and_1
+
+        counter += 1
+        x_iterates[counter] = x_k
+
+    return x_k, x_iterates
+
+
+qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(8,f,np_dfdx,"BFGS",x_start)
+# Sample call with noise
+#qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(8,f,np_dfdx,"BFGS",x_start,noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]]))
+print("rank 2 H method returns")
+print(qn_H2_soln)
+ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', color='lime',label="QN-H Rank-2 (1973)")
+ax.legend()
+
 # Save the figure as a PNG
 fig.savefig('contour.png')
 
@@ -352,10 +416,29 @@ ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG"
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
 ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
 ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
+ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
 
 ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
 ax.legend()
 
 fig.savefig("iterate residuals")
-fig.show()
+
+fig,ax= plt.subplots()
+ax.set_title("L2-norm between iterate and optimal")
+ax.set_yscale('log') # Change to log-scale
+
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN (1973)")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
+ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
+ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
+ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
+
+ax.set_xlabel("Iteration")
+ax.set_ylabel("L2 norm between current estimate and optimal")
+ax.legend()
+
+fig.savefig("log iterate residuals")
+#fig.show()
