@@ -39,6 +39,7 @@ H = [[2.0, -2.0], [-2.0, 8.0]]
 
 # Start location
 x_start = [-3.0, 3.0]
+opt_x = np.zeros((2,1))
 
 # Design variables at mesh points
 i1 = np.arange(-4.0, 4.0, 0.1)
@@ -47,17 +48,18 @@ x1_mesh, x2_mesh = np.meshgrid(i1, i2)
 f_mesh = x1_mesh ** 2 - 2.0 * x1_mesh * x2_mesh + 4 * x2_mesh ** 2
 
 # Create a contour plot
-plt.figure()
+
+fig, ax = plt.subplots()
 # Specify contour lines
 lines = range(2, 52, 2)
 # Plot contours
-CS = plt.contour(x1_mesh, x2_mesh, f_mesh, lines)
+CS = ax.contour(x1_mesh, x2_mesh, f_mesh, lines)
 # Label contours
-plt.clabel(CS, inline=1, fontsize=10)
+ax.clabel(CS, inline=1, fontsize=10)
 # Add some text to the plot
-plt.title('f(x) = x1^2 - 2*x1*x2 + 4*x2^2')
-plt.xlabel('x1')
-plt.ylabel('x2')
+ax.set_title('f(x) = x1^2 - 2*x1*x2 + 4*x2^2')
+ax.set_xlabel('x1')
+ax.set_ylabel('x2')
 # Show the plot
 # plt.show()
 
@@ -73,7 +75,7 @@ gn = dfdx(xn[0])
 delta_xn = np.empty((1, 2))
 delta_xn = -np.linalg.solve(H, gn)
 xn[1] = xn[0] + delta_xn
-plt.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
+ax.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
 
 ##################################################
 # Steepest descent method
@@ -91,7 +93,7 @@ for i in range(n):
     # Compute search direction and magnitude (dx)
     #  with dx = - grad but no line searching
     xs[i + 1] = xs[i] - np.dot(alpha, dfdx(xs[i]))
-plt.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
+ax.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
 
 ##################################################
 # Conjugate gradient method
@@ -120,7 +122,7 @@ for i in range(n):
         beta = np.dot(gc[i], gc[i]) / np.dot(gc[i - 1], gc[i - 1])
         delta_cg[i] = alpha * np.dot(neg, dfdx(xc[i])) + beta * delta_cg[i - 1]
     xc[i + 1] = xc[i] + delta_cg[i]
-plt.plot(xc[:, 0], xc[:, 1], 'y-o',label="CG")
+ax.plot(xc[:, 0], xc[:, 1], 'y-o',label="CG")
 
 ##################################################
 # Quasi-Newton method
@@ -179,7 +181,7 @@ for i in range(n):
 
     h[i + 1] = h[i] + part3 - part9
 
-plt.plot(xq[:, 0], xq[:, 1], 'r-o',label="QN")
+ax.plot(xq[:, 0], xq[:, 1], 'r-o',label="QN")
 print("BFGS method returns")
 print(xq[-1,:])
 '''
@@ -216,6 +218,8 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
     x_iterates = np.zeros((k + 1, 2))
     x_iterates[0] = x_0
 
+
+
     while cond:
 
         # new iterates
@@ -225,11 +229,18 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
         y_k = gradient(x_k_and_1) - gradient(x_k)
 
         s_k = x_k_and_1 - x_k
-        c = s_k # fix to a fixed method
-
-
+        noise = np.random.uniform(500, 1000)
+        noise = np.random.uniform((0,1), size=(2,2,))
+        print("noise added:")
+        print(noise)
+        c = y_k
+        print(c)
+        c = noise@y_k # fix to a fixed method
+        print(c)
         # compute the next B_{k+1} iteration
         B_k_and_1 = B_k + np.outer(y_k - np.matmul(B_k,s_k), np.transpose(c)/np.dot(c, s_k))
+
+        # add the noise. that is bounded within some quantity.
 
         # update the matrix:
         B_k = B_k_and_1
@@ -246,11 +257,11 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
 qn_soln , qn_iterates = general_rank_1_QN(8,f,np_dfdx,None,x_start)
 print("rank 1 method returns")
 print(qn_soln)
-plt.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
-plt.legend()
+ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
+ax.legend()
 
 # Save the figure as a PNG
-plt.savefig('contour.png')
+fig.savefig('contour.png')
 
 
 '''examine spectral norm (induced l2 norm)'''
@@ -261,4 +272,32 @@ H_inverse = np.linalg.inv(H)
 prod = np.linalg.norm(H_inverse,ord=2) * np.linalg.norm(diff,ord=2)
 print("Norm is " + str(prod )) # tight 1/2, not a constant? (but must be less than one
 print(diff)
-plt.show()
+fig.show()
+plt.close(fig)
+
+
+
+# qn_iterates-
+'''
+Computes the residuals
+'''
+def compute_residuals(iterates, opt_x):
+    return np.linalg.norm(iterates-opt_x.transpose(), ord=2, axis=1)
+
+
+fig,ax= plt.subplots()
+ax.set_title("L2-norm between iterate and optimal")
+
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN (1973)")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
+ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
+
+
+ax.set_xlabel("Iteration")
+ax.set_ylabel("L2 norm between current estimate and optimal")
+ax.legend()
+
+fig.savefig("iterate residuals")
+fig.show()
