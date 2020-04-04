@@ -150,6 +150,7 @@ g[0] = dfdx(xq[0])
 # Initialize hessian storage
 h = np.zeros((n + 1, 2, 2))
 h[0] = [[1, 0.0], [0.0, 1]]
+h[0] *=5
 for i in range(n):
 
     search_dirn = np.linalg.solve(h[i], g[i])
