@@ -203,16 +203,12 @@ args:
 
 # we have H\delta = grad_x => solving for delta. But B approximates the hessian, not the hessian inverse
 def general_rank_1_QN(k,f,gradient,c,x_0):
-    # our HESSIAN approximation (NOT hessian inverse)
+    # B_0 is our HESSIAN approximation (NOT hessian inverse). This is very critical!
     B_0 = [[2.3, -2.50], [-2.5, 7]]
     counter = 0
     x_k = x_0
     B_k = B_0
     cond = True
-
-    # Initialize gradient storage
-    # g = np.zeros((k + 1, 2))
-    # g[0] = dfdx(xq[0])
 
     # Initalize the plots
     x_iterates = np.zeros((k + 1, 2))
