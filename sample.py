@@ -63,8 +63,8 @@ fig, ax = plt.subplots()
 
 
 v_func = np.vectorize(f_sep)    # major key!
-ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
-
+contours = ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
+ax.clabel(contours , inline=True, fontsize=8)
 # Add some text to the plot
 ax.set_title('f(x) = x1^2 - 2*x1*x2 + 4*x2^2')
 ax.set_xlabel('x1')
