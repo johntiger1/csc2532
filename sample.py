@@ -7,12 +7,16 @@ import matplotlib.pyplot as plt
 import scipy
 import scipy.optimize
 
+
 # define objective function
+def f_sep(x1,x2):
+    obj = x1 ** 2 - 2.0 * x1 * x2 + 4 * x2 ** 2
+    return obj
+
 def f(x):
     x1 = x[0]
     x2 = x[1]
-    obj = x1 ** 2 - 2.0 * x1 * x2 + 4 * x2 ** 2
-    return obj
+    return f_sep(x1,x2)
 
 
 # define objective gradient
@@ -45,17 +49,22 @@ opt_x = np.zeros((2,1))
 i1 = np.arange(-4.0, 4.0, 0.1)
 i2 = np.arange(-4.0, 4.0, 0.1)
 x1_mesh, x2_mesh = np.meshgrid(i1, i2)
-f_mesh = x1_mesh ** 2 - 2.0 * x1_mesh * x2_mesh + 4 * x2_mesh ** 2
+#f_mesh = x1_mesh ** 2 - 2.0 * x1_mesh * x2_mesh + 4 * x2_mesh ** 2
 
 # Create a contour plot
 
 fig, ax = plt.subplots()
 # Specify contour lines
-lines = range(2, 52, 2)
+#lines = range(2, 52, 2)
 # Plot contours
-CS = ax.contour(x1_mesh, x2_mesh, f_mesh, lines)
+#CS = ax.contour(x1_mesh, x2_mesh, f_mesh, lines)
 # Label contours
-ax.clabel(CS, inline=1, fontsize=10)
+#ax.clabel(CS, inline=1, fontsize=10)
+
+
+v_func = np.vectorize(f_sep)    # major key!
+ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
+
 # Add some text to the plot
 ax.set_title('f(x) = x1^2 - 2*x1*x2 + 4*x2^2')
 ax.set_xlabel('x1')
