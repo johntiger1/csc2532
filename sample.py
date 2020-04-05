@@ -23,9 +23,9 @@ def f(x):
 def dfdx(x):
     x1 = x[0]
     x2 = x[1]
-    grad = []
-    grad.append(2.0 * x1 - 2.0 * x2)
-    grad.append(-2.0 * x1 + 8.0 * x2)
+    grad = np.zeros((2))
+    grad[0] = 2.0 * x1 - 2.0 * x2
+    grad[1] = -2.0 * x1 + 8.0 * x2
     return grad
 
 
