@@ -2,83 +2,31 @@
 # Import some other libraries that we'll need
 # matplotlib and numpy packages must also be installed
 import matplotlib
-import numpy as np
+#import numpy as np
+import autograd.numpy as np  
+from autograd import jacobian 
 import matplotlib.pyplot as plt
 import scipy
 import scipy.optimize
 
+a = np.array([1,0,2.0])
+
+
+def f_sep(x1,x2):
+    return f([x1,x2])
 
 # define objective function
 def f(x):
-    x1 = x[0]
-    x2 = x[1]
-    return f_sep(x1,x2)
+    return 100*(x[1] - x[0]**2)**2 + (x[0] - 1)**2
 
-"""
-def f_sep(x1,x2):
-    obj = x1 ** 2 - 2.0 * x1 * x2 + 4 * x2 ** 2
-    return obj
+dfdx = lambda x : jacobian(f)(np.array(x).astype(float))
 
-# define objective gradient
-def dfdx(x):
-    x1 = x[0]
-    x2 = x[1]
-    grad = []
-    grad.append(2.0 * x1 - 2.0 * x2)
-    grad.append(-2.0 * x1 + 8.0 * x2)
-    return grad
+np_dfdx = dfdx
 
-
-# define objective gradient
-def np_dfdx(x):
-    x1 = x[0]
-    x2 = x[1]
-    grad = []
-    grad.append(2.0 * x1 - 2.0 * x2)
-    grad.append(-2.0 * x1 + 8.0 * x2)
-    return np.array(grad)
-"""
-
-def f_sep(x1,x2):
-    x = np.array([x1,x2])
-    y = 4*x
-    y[0] += 1
-    y[1:] += 3
-    return np.sum(.5*(1 - y[:-1])**2 + (y[1:] - y[:-1]**2)**2)
-
-
-def dfdx(x):
-    x = np.array(x)
-    y = 4*x
-    y[0] += 1
-    y[1:] += 3
-    xm = y[1:-1]
-    xm_m1 = y[:-2]
-    xm_p1 = y[2:]
-    der = np.zeros_like(y)
-    der[1:-1] = 2*(xm - xm_m1**2) - 4*(xm_p1 - xm**2)*xm - .5*2*(1 - xm)
-    der[0] = -4*y[0]*(y[1] - y[0]**2) - .5*2*(1 - y[0])
-    der[-1] = 2*(y[-1] - y[-2]**2)
-    return 4*der
-
-def np_dfdx(x):
-    return np.array(dfdx(x))
-
-def rosenbrock_hessian(x):
-    y = 4*x
-    y[0] += 1
-    y[1:] += 3
-
-    H = np.diag(-4*y[:-1], 1) - np.diag(4*y[:-1], -1)
-    diagonal = np.zeros_like(y)
-    diagonal[0] = 12*y[0]**2 - 4*y[1] + 2*.5
-    diagonal[-1] = 2
-    diagonal[1:-1] = 3 + 12*y[1:-1]**2 - 4*y[2:]*.5
-    H = H + np.diag(diagonal)
-    return 4*4*H
+rosenbrock_hessian = lambda x : jacobian(jacobian(f))(np.array(x).astype(float))
 
 # Exact 2nd derivatives (hessian)
-H = rosenbrock_hessian(np.array([0,0]))
+H = rosenbrock_hessian(np.array([1,1]))
 
 print("F'(x*):")
 print(H)
@@ -86,12 +34,12 @@ print("F'(x*)^{-1}: {}")
 print(np.linalg.inv(H))
 
 # Start location
-x_start = [-0.05, 0.05]
+x_start = [1.05, 1.05]
 opt_x = np.zeros((2,1))
 
 # Design variables at mesh points
-i1 = np.arange(-1.0, 1.0, 0.1)
-i2 = np.arange(-1.0, 1.0, 0.1)
+i1 = np.arange(-4.0, 4.0, 0.1)
+i2 = np.arange(-4.0, 4.0, 0.1)
 x1_mesh, x2_mesh = np.meshgrid(i1, i2)
 #f_mesh = x1_mesh ** 2 - 2.0 * x1_mesh * x2_mesh + 4 * x2_mesh ** 2
 
@@ -99,8 +47,8 @@ x1_mesh, x2_mesh = np.meshgrid(i1, i2)
 
 fig, ax = plt.subplots()
 
-plt.ylim(-1, 1)
-plt.xlim(-1, 1)
+plt.ylim(-4, 4)
+plt.xlim(-4, 4)
 
 # Specify contour lines
 #lines = range(2, 52, 2)
@@ -140,7 +88,7 @@ ax.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
 # Number of iterations
 n = 8
 # Use this alpha for every line search
-alpha = 0.15
+alpha = 0.0001
 # Initialize xs
 xs = np.zeros((n + 1, 2))
 xs[0] = x_start
@@ -158,7 +106,7 @@ ax.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
 # Number of iterations
 n = 8
 # Use this alpha for the first line search
-alpha = 0.15
+alpha = 0.0001
 neg = [[-1.0, 0.0], [0.0, -1.0]]
 # Initialize xc
 xc = np.zeros((n + 1, 2))
@@ -181,13 +129,18 @@ for i in range(n):
     xc[i + 1] = xc[i] + delta_cg[i]
 ax.plot(xc[:, 0], xc[:, 1], 'y-o',label="CG")
 
+#### HACKY INIT
+TEMP_B0 = H + [[0.5,0.5],[0.5,0.5]]
+
+
+
 ##################################################
 # Quasi-Newton method
 ##################################################
 # Number of iterations
 n = 8
 # Use this alpha for every line search
-alpha = np.linspace(0.1, 1.0, n)
+alpha = np.linspace(0.0001, 0.0001, n)
 # Initialize delta_xq and gamma
 delta_xq = np.zeros((2, 1))
 gamma = np.zeros((2, 1))
@@ -208,8 +161,7 @@ g = np.zeros((n + 1, 2))
 g[0] = dfdx(xq[0])
 # Initialize hessian storage
 h = np.zeros((n + 1, 2, 2))
-h[0] = [[1, 0.0], [0.0, 1]]
-h[0] *=5
+h[0] = TEMP_B0
 for i in range(n):
 
     search_dirn = np.linalg.solve(h[i], g[i])
@@ -262,7 +214,6 @@ args:
   - x0: the initial guess for the iterates
 '''
 
-TEMP_B0 = [[ 16.1, -64.1], [-64.1,  32.1]]
 
 # we have H\delta = grad_x => solving for delta. But B approximates the hessian, not the hessian inverse
 def general_rank_1_QN(k,f,gradient,c,x_0):
