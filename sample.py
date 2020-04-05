@@ -8,37 +8,44 @@ import scipy
 import scipy.optimize
 
 # define objective function
-def f(x):
-    x1 = x[0]
-    x2 = x[1]
-    obj = x1 ** 2 - 2.0 * x1 * x2 + 4 * x2 ** 2
-    return obj
+# def f(x):
+#     x1 = x[0]
+#     x2 = x[1]
+#     obj = x1 ** 2 - 2.0 * x1 * x2 + 4 * x2 ** 2
+#     return obj
 
+def f(x):   # The rosenbrock function
+    return .5*(1 - x[0])**2 + (x[1] - x[0]**2)**2
 
-# define objective gradient
 def dfdx(x):
-    x1 = x[0]
-    x2 = x[1]
-    grad = []
-    grad.append(2.0 * x1 - 2.0 * x2)
-    grad.append(-2.0 * x1 + 8.0 * x2)
-    return grad
+    return list((-2*.5*(1 - x[0]) - 4*x[0]*(x[1] - x[0]**2), 2*(x[1] - x[0]**2)))
 
-
-# define objective gradient
 def np_dfdx(x):
-    x1 = x[0]
-    x2 = x[1]
-    grad = []
-    grad.append(2.0 * x1 - 2.0 * x2)
-    grad.append(-2.0 * x1 + 8.0 * x2)
-    return np.array(grad)
+    return np.array(dfdx(x))
+# # define objective gradient
+# def dfdx(x):
+#     x1 = x[0]
+#     x2 = x[1]
+#     grad = []
+#     grad.append(2.0 * x1 - 2.0 * x2)
+#     grad.append(-2.0 * x1 + 8.0 * x2)
+#     return grad
+#
+#
+# # define objective gradient
+# def np_dfdx(x):
+#     x1 = x[0]
+#     x2 = x[1]
+#     grad = []
+#     grad.append(2.0 * x1 - 2.0 * x2)
+#     grad.append(-2.0 * x1 + 8.0 * x2)
+#     return np.array(grad)
 
 # Exact 2nd derivatives (hessian)
 H = [[2.0, -2.0], [-2.0, 8.0]]
 
 # Start location
-x_start = [-3.0, 3.0]
+x_start = [-11.0, 11.0]
 opt_x = np.zeros((2,1))
 
 # Design variables at mesh points
@@ -75,7 +82,7 @@ gn = dfdx(xn[0])
 delta_xn = np.empty((1, 2))
 delta_xn = -np.linalg.solve(H, gn)
 xn[1] = xn[0] + delta_xn
-ax.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
+# ax.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
 
 ##################################################
 # Steepest descent method
@@ -93,7 +100,7 @@ for i in range(n):
     # Compute search direction and magnitude (dx)
     #  with dx = - grad but no line searching
     xs[i + 1] = xs[i] - np.dot(alpha, dfdx(xs[i]))
-ax.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
+# ax.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
 
 ##################################################
 # Conjugate gradient method
@@ -122,7 +129,7 @@ for i in range(n):
         beta = np.dot(gc[i], gc[i]) / np.dot(gc[i - 1], gc[i - 1])
         delta_cg[i] = alpha * np.dot(neg, dfdx(xc[i])) + beta * delta_cg[i - 1]
     xc[i + 1] = xc[i] + delta_cg[i]
-ax.plot(xc[:, 0], xc[:, 1], 'y-o',label="CG")
+# ax.plot(xc[:, 0], xc[:, 1], 'y-o',label="CG")
 
 ##################################################
 # Quasi-Newton method
@@ -151,8 +158,8 @@ g = np.zeros((n + 1, 2))
 g[0] = dfdx(xq[0])
 # Initialize hessian storage
 h = np.zeros((n + 1, 2, 2))
-h[0] = [[1, 0.0], [0.0, 1]]
-h[0] *=5
+h[0] = [[0.1, 0.0], [0.0, 0.1]]
+# h[0] *=5
 for i in range(n):
 
     search_dirn = np.linalg.solve(h[i], g[i])
@@ -181,7 +188,7 @@ for i in range(n):
 
     h[i + 1] = h[i] + part3 - part9
 
-ax.plot(xq[:, 0], xq[:, 1], 'r-o',label="QN")
+# ax.plot(xq[:, 0], xq[:, 1], 'r-o',label="QN")
 print("BFGS method returns")
 print(xq[-1,:])
 '''
@@ -208,7 +215,7 @@ args:
 # we have H\delta = grad_x => solving for delta. But B approximates the hessian, not the hessian inverse
 def general_rank_1_QN(k,f,gradient,c,x_0):
     # B_0 is our HESSIAN approximation (NOT hessian inverse). This is very critical!
-    B_0 = [[2.3, -2.50], [-2.5, 7]]
+    B_0 = [[0.3, 0], [-0, 0.3]]
     counter = 0
     x_k = x_0
     B_k = B_0
@@ -235,7 +242,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
         print(noise)
         c = y_k
         print(c)
-        c = noise@y_k # fix to a fixed method
+        c = y_k # fix to a fixed method
         print(c)
         # compute the next B_{k+1} iteration
         B_k_and_1 = B_k + np.outer(y_k - np.matmul(B_k,s_k), np.transpose(c)/np.dot(c, s_k))
@@ -257,7 +264,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
 qn_soln , qn_iterates = general_rank_1_QN(8,f,np_dfdx,None,x_start)
 print("rank 1 method returns")
 print(qn_soln)
-ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
+# ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
 ax.legend()
 
 # Save the figure as a PNG
@@ -296,6 +303,8 @@ ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's met
 
 
 ax.set_xlabel("Iteration")
+# ax.xlabel = "sd"
+
 ax.set_ylabel("L2 norm between current estimate and optimal")
 ax.legend()
 
