@@ -28,16 +28,6 @@ def dfdx(x):
     grad[1] = -2.0 * x1 + 8.0 * x2
     return grad
 
-
-# define objective gradient
-def np_dfdx(x):
-    x1 = x[0]
-    x2 = x[1]
-    grad = []
-    grad.append(2.0 * x1 - 2.0 * x2)
-    grad.append(-2.0 * x1 + 8.0 * x2)
-    return np.array(grad)
-
 # Exact 2nd derivatives (hessian)
 H = [[2.0, -2.0], [-2.0, 8.0]]
 
@@ -263,7 +253,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
 
     return x_k, x_iterates
 
-qn_soln , qn_iterates = general_rank_1_QN(8,f,np_dfdx,None,x_start)
+qn_soln , qn_iterates = general_rank_1_QN(8,f,dfdx,None,x_start)
 print("rank 1 method returns")
 print(qn_soln)
 ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
@@ -320,7 +310,7 @@ def general_rank_1_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv([[2.3, -2.50], [
     return x_k, x_iterates
 
 
-qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(8,f,np_dfdx,"mccormick",x_start)
+qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(8,f,dfdx,"mccormick",x_start)
 # Sample call with noise
 # qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(8,f,np_dfdx,"mccormick",x_start, noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]]))
 print("rank 1 H method returns")
