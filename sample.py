@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import scipy
 import scipy.optimize
 
-
+NAME = "f(x) = x1^2 - 2*x1*x2 + 4*x2^2"
 # define objective function
 def f_sep(x1,x2):
     obj = x1 ** 2 - 2.0 * x1 * x2 + 4 * x2 ** 2
@@ -56,7 +56,7 @@ v_func = np.vectorize(f_sep)    # major key!
 contours = ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
 ax.clabel(contours , inline=True, fontsize=8)
 # Add some text to the plot
-ax.set_title('f(x) = x1^2 - 2*x1*x2 + 4*x2^2')
+ax.set_title(NAME)
 ax.set_xlabel('x1')
 ax.set_ylabel('x2')
 # Show the plot
@@ -374,7 +374,7 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv([[2.3, -2.50], [
     return x_k, x_iterates
 
 
-qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(8,f,np_dfdx,"BFGS",x_start)
+qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(8,f,dfdx,"BFGS",x_start)
 # Sample call with noise
 #qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(8,f,np_dfdx,"BFGS",x_start,noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]]))
 print("rank 2 H method returns")
