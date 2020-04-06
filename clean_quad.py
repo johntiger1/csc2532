@@ -205,10 +205,7 @@ print("BFGS method returns")
 print(xq[-1,:])
 '''
 
-Recall den => in ml4h stuff!
 General QN Rank 1 method as described in Broyden 1973
-We can also verify the subsequence of Hessian updates also converges
-
 ===
 
 Given an initialization, and a function, will apply QN update rule iteratively to optimize the function.
