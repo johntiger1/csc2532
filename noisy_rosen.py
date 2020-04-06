@@ -9,9 +9,11 @@ from optimizers import *
 
 ########## RANDOMNESS ##########
 np.random.seed(42)
-trials = 5
+trials = 10
 
 noise = lambda s : 100 * np.random.rand(2) - 50
+#noise = lambda s: 10000 * np.random.rand(2) - 5000
+#noise = lambda s : 5000+10000 * np.random.rand(2) - 5000
 
 def normalize(x):
     return x / np.linalg.norm(x,ord=2)
@@ -58,7 +60,7 @@ x_start = np.array([1.001, 0.999])
 TEMP_B0 = H #+ [[0.05,0.05],[0.05,-0.05]] # H_0 is this thing's inverse
 
 # Max iterations
-max_iter = 8
+max_iter = 10
 
 # GD ALPHA
 GD_alpha = 0.0001
@@ -228,3 +230,4 @@ def plot_residual_trials(data,filename,label):
     plt.close(fig)
 
 plot_residual_trials(qn_H2_unbnd_noise,'_unbd_nse_iter.png',"Unbound Noise Trial")
+plot_residual_trials(qn_H2_bnd_noise,'_bd_nse_iter.png',"Bound Noise Trial")
