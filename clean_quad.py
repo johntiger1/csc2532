@@ -1,115 +1,128 @@
-## Generate a contour plot
-# Import some other libraries that we'll need
-# matplotlib and numpy packages must also be installed
 import matplotlib
-#import numpy as np
 import autograd.numpy as np  
 from autograd import jacobian 
 import matplotlib.pyplot as plt
 import scipy
 import scipy.optimize
 
-a = np.array([1,0,2.0])
 
+########## PLOTTING PARAMETERS ##########
+ymin = -20
+ymax = 20
+
+xmin = -20
+xmax = 20
+
+step = 0.1
+
+title = 'f(x) = x1^2 - 2*x1*x2 + 4*x2^2'
+
+png_prefix = "quad1_"
+########## FUNCTION DEFINITION ################
+# define objective function
+def f(x):
+    return x[0] ** 2 - 2.0 * x[0] * x[1] + 4 * x[1] ** 2
 
 def f_sep(x1,x2):
     return f([x1,x2])
 
-# define objective function
-def f(x):
-    return 100*(x[1] - x[0]**2)**2 + (x[0] - 1)**2
-
 dfdx = lambda x : jacobian(f)(np.array(x).astype(float))
 
-np_dfdx = dfdx
+hessian = lambda x : jacobian(jacobian(f))(np.array(x).astype(float))
+########## INITIALIZATION PARAMETERS ##########
 
-rosenbrock_hessian = lambda x : jacobian(jacobian(f))(np.array(x).astype(float))
+# SOLUTION POSITION
+opt_x = np.array([0,0])
 
-# Exact 2nd derivatives (hessian)
-H = rosenbrock_hessian(np.array([1,1]))
 
-print("F'(x*):")
-print(H)
-print("F'(x*)^{-1}: {}")
-print(np.linalg.inv(H))
+H = hessian(np.array(opt_x)) # Exact 2nd derivatives (hessian)
 
-# Start location
-x_start = [1.05, 1.05]
-opt_x = np.zeros((2,1))
+# STARTING PARAMS
+x_start = np.array([10, 10])
+TEMP_B0 = H + [[0.5,0.5],[0.5,0.5]] # H_0 is this thing's inverse
+
+# Max iterations
+max_iter = 8
+
+# GD ALPHA
+GD_alpha = 0.15
+
+# CGD ALPHA
+CGD_alpha = 0.15
+
+# BFGS alpha - set to (1,1,max_iter) to force step size 1
+#BFGS_alpha = alpha = np.linspace(0.1, 1.0, max_iter)
+BFGS_alpha = alpha = np.linspace(1, 1, max_iter)
+##############################################
+
 
 # Design variables at mesh points
-i1 = np.arange(-4.0, 4.0, 0.1)
-i2 = np.arange(-4.0, 4.0, 0.1)
+i1 = np.arange(xmin, xmax, step)
+i2 = np.arange(ymin, ymax, step)
 x1_mesh, x2_mesh = np.meshgrid(i1, i2)
-#f_mesh = x1_mesh ** 2 - 2.0 * x1_mesh * x2_mesh + 4 * x2_mesh ** 2
 
 # Create a contour plot
 
 fig, ax = plt.subplots()
 
-plt.ylim(-4, 4)
-plt.xlim(-4, 4)
-
-# Specify contour lines
-#lines = range(2, 52, 2)
-# Plot contours
-#CS = ax.contour(x1_mesh, x2_mesh, f_mesh, lines)
-# Label contours
-#ax.clabel(CS, inline=1, fontsize=10)
-
-
-v_func = np.vectorize(f_sep)    # major key!
+plt.ylim(ymin, ymax)
+plt.xlim(xmin, xmax)
+v_func = np.vectorize(f_sep)
 ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
 
 # Add some text to the plot
-ax.set_title('f(x) = x1^2 - 2*x1*x2 + 4*x2^2')
+ax.set_title(title)
 ax.set_xlabel('x1')
 ax.set_ylabel('x2')
-# Show the plot
-# plt.show()
+
 
 ##################################################
 # Newton's method
 ##################################################
-xn = np.zeros((2, 2))
+n = max_iter
+xn = np.zeros((n + 1, 2)) + opt_x
 xn[0] = x_start
-# Get gradient at start location (df/dx or grad(f))
-gn = dfdx(xn[0])
-# Compute search direction and magnitude (dx)
-#  with dx = -inv(H) * grad
-delta_xn = np.empty((1, 2))
-delta_xn = -np.linalg.solve(H, gn)
-xn[1] = xn[0] + delta_xn
+
+for i in range(n):
+    # Get gradient at start location (df/dx or grad(f))
+    gn = dfdx(xn[i])
+    # Compute search direction and magnitude (dx)
+    #  with dx = -inv(H) * grad
+    #delta_xn = np.empty((1, 2))
+    delta_xn = -np.linalg.solve(H, gn)
+    xn[i+1] = xn[i] + delta_xn
 ax.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
+
+print("Newton's method returns")
+print(xn[-1,:])
 
 ##################################################
 # Steepest descent method
 ##################################################
 # Number of iterations
-n = 8
-# Use this alpha for every line search
-alpha = 0.0001
+n = max_iter
 # Initialize xs
-xs = np.zeros((n + 1, 2))
+xs = np.zeros((n + 1, 2)) + opt_x
 xs[0] = x_start
 # Get gradient at start location (df/dx or grad(f))
 for i in range(n):
     gs = dfdx(xs[i])
     # Compute search direction and magnitude (dx)
     #  with dx = - grad but no line searching
-    xs[i + 1] = xs[i] - np.dot(alpha, dfdx(xs[i]))
+    xs[i + 1] = xs[i] - np.dot(GD_alpha, dfdx(xs[i]))
 ax.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
+
+print("Gradient Descent returns")
+print(xs[-1,:])
 
 ##################################################
 # Conjugate gradient method
 ##################################################
 # Number of iterations
-n = 8
-# Use this alpha for the first line search
-alpha = 0.0001
-neg = [[-1.0, 0.0], [0.0, -1.0]]
+n = max_iter
+neg = np.array([[-1.0, 0.0], [0.0, -1.0]])
 # Initialize xc
-xc = np.zeros((n + 1, 2))
+xc = np.zeros((n + 1, 2)) + opt_x
 xc[0] = x_start
 # Initialize delta_gc
 delta_cg = np.zeros((n + 1, 2))
@@ -122,25 +135,22 @@ for i in range(n):
     #  with dx = - grad but no line searching
     if i == 0:
         beta = 0
-        delta_cg[i] = - np.dot(alpha, dfdx(xc[i]))
+        delta_cg[i] = - np.dot(CGD_alpha, dfdx(xc[i]))
     else:
         beta = np.dot(gc[i], gc[i]) / np.dot(gc[i - 1], gc[i - 1])
-        delta_cg[i] = alpha * np.dot(neg, dfdx(xc[i])) + beta * delta_cg[i - 1]
+        delta_cg[i] = CGD_alpha * np.dot(neg, dfdx(xc[i])) + beta * delta_cg[i - 1]
     xc[i + 1] = xc[i] + delta_cg[i]
 ax.plot(xc[:, 0], xc[:, 1], 'y-o',label="CG")
 
-#### HACKY INIT
-TEMP_B0 = H + [[0.5,0.5],[0.5,0.5]]
-
-
+print("Conjugate Gradient method returns")
+print(xc[-1,:])
 
 ##################################################
 # Quasi-Newton method
 ##################################################
 # Number of iterations
-n = 8
-# Use this alpha for every line search
-alpha = np.linspace(0.0001, 0.0001, n)
+n = max_iter
+
 # Initialize delta_xq and gamma
 delta_xq = np.zeros((2, 1))
 gamma = np.zeros((2, 1))
@@ -154,7 +164,7 @@ part7 = np.zeros((1, 1))
 part8 = np.zeros((2, 2))
 part9 = np.zeros((2, 2))
 # Initialize xq
-xq = np.zeros((n + 1, 2))
+xq = np.zeros((n + 1, 2)) + opt_x
 xq[0] = x_start
 # Initialize gradient storage
 g = np.zeros((n + 1, 2))
@@ -167,7 +177,7 @@ for i in range(n):
     search_dirn = np.linalg.solve(h[i], g[i])
     # Compute search direction and magnitude (dx)
     #  with dx = -alpha * inv(h) * grad
-    delta_xq = -np.dot(1, np.linalg.solve(h[i], g[i]))
+    delta_xq = -np.dot(BFGS_alpha[i], np.linalg.solve(h[i], g[i]))
     # delta_xq = - np.linalg.solve(h[i], g[i])
 
     xq[i + 1] = xq[i] + delta_xq
@@ -225,7 +235,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
     cond = True
 
     # Initalize the plots
-    x_iterates = np.zeros((k + 1, 2))
+    x_iterates = np.zeros((k + 1, 2)) + opt_x
     x_iterates[0] = x_0
 
 
@@ -239,6 +249,11 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
         y_k = gradient(x_k_and_1) - gradient(x_k)
 
         s_k = x_k_and_1 - x_k
+
+        # Terminate if we have converged in finite steps
+        if not np.any(s_k):
+            break
+
         #noise = np.random.uniform(500, 1000)
         #noise = np.random.uniform((0,1), size=(2,2,))
         #print("noise added:")
@@ -264,7 +279,7 @@ def general_rank_1_QN(k,f,gradient,c,x_0):
 
     return x_k, x_iterates
 
-qn_soln , qn_iterates = general_rank_1_QN(8,f,np_dfdx,None,x_start)
+qn_soln , qn_iterates = general_rank_1_QN(max_iter,f,dfdx,None,x_start)
 print("rank 1 method returns")
 print(qn_soln)
 ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
@@ -297,10 +312,8 @@ def general_rank_1_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv(TEMP_B0), noise=
             return rank_1_H_update(H,s,y,s+noise(s))
 
     # Initalize the plots
-    x_iterates = np.zeros((k + 1, 2))
+    x_iterates = np.zeros((k + 1, 2)) + opt_x
     x_iterates[0] = x_0
-
-    s_k = [9999999, 99999999] # junk initialization
 
     while counter < k:
         x_k_and_1  = x_k - np.matmul(H_k, gradient(x_k))
@@ -320,11 +333,10 @@ def general_rank_1_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv(TEMP_B0), noise=
 
     return x_k, x_iterates
 
-
-qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(8,f,np_dfdx,"mccormick",x_start)
-# Sample call with noise
-# qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(8,f,np_dfdx,"mccormick",x_start, noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]]))
-print("rank 1 H method returns")
+MODE = "mccormick"
+qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(max_iter,f,dfdx,MODE,x_start)
+# FOR NOISE USE noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]])
+print("rank 1 H method \"{}\" returns".format(MODE))
 print(qn_H1_soln)
 ax.plot(qn_H1_iterates[:, 0], qn_H1_iterates[:, 1], 'm-o',label="QN-H (1973)")
 ax.legend()
@@ -361,10 +373,8 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv(TEMP_B0), noise=
             return rank_2_H_update(H,s,y,s+noise(s))
 
     # Initalize the plots
-    x_iterates = np.zeros((k + 1, 2))
+    x_iterates = np.zeros((k + 1, 2)) + opt_x
     x_iterates[0] = x_0
-
-    s_k = [9999999, 99999999] # junk initialization
 
     while counter < k:
         x_k_and_1  = x_k - np.matmul(H_k, gradient(x_k))
@@ -384,27 +394,19 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv(TEMP_B0), noise=
 
     return x_k, x_iterates
 
-
-qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(8,f,np_dfdx,"BFGS",x_start)
-# Sample call with noise
-#qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(8,f,np_dfdx,"BFGS",x_start,noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]]))
-print("rank 2 H method returns")
+MODE = "BFGS"
+qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start)
+# FOR NOISE USE noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]])
+print("rank 2 H method \"{}\" returns".format(MODE))
 print(qn_H2_soln)
-ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', color='lime',label="QN-H Rank-2 (1973)")
+ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', color='lime',label="QN-H R2 (1973)")
 ax.legend()
 
-# Save the figure as a PNG
-fig.savefig('contour.png')
+contours = ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
+ax.clabel(contours , inline=True, fontsize=8)
 
-'''examine spectral norm (induced l2 norm)'''
-I = np.array([[2.3, -2.50], [-2.5, 9]])
-H = np.array(H)
-diff = I - H
-H_inverse = np.linalg.inv(H)
-prod = np.linalg.norm(H_inverse,ord=2) * np.linalg.norm(diff,ord=2)
-print("Norm is " + str(prod )) # tight 1/2, not a constant? (but must be less than one
-print(diff)
-fig.show()
+# Save the figure as a PNG
+fig.savefig(png_prefix+'contour.png')
 plt.close(fig)
 
 
@@ -432,7 +434,7 @@ ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
 ax.legend()
 
-fig.savefig("iterate residuals")
+fig.savefig(png_prefix+"iterate residuals")
 
 fig,ax= plt.subplots()
 ax.set_title("L2-norm between iterate and optimal")
@@ -450,5 +452,5 @@ ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
 ax.legend()
 
-fig.savefig("log iterate residuals")
+fig.savefig(png_prefix+"log iterate residuals")
 #fig.show()
