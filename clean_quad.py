@@ -92,7 +92,7 @@ print(xn[-1,:])
 # Steepest descent method
 ##################################################
 xs = gd(max_iter,f,dfdx,x_start,GD_alpha)
-ax.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
+ax.plot(xs[:, 0], xs[:, 1], marker='o', ls='-',  label="GD")
 
 print("Gradient Descent returns")
 print(xs[-1,:])
@@ -101,7 +101,7 @@ print(xs[-1,:])
 # Conjugate gradient method
 ##################################################
 xc = cgd(max_iter, f, dfdx, x_start, CGD_alpha)
-ax.plot(xc[:, 0], xc[:, 1], 'y-o',label="CG")
+ax.plot(xc[:, 0], xc[:, 1], marker='o', ls='-', label="CG")
 
 print("Conjugate Gradient method returns")
 print(xc[-1,:])
@@ -111,7 +111,7 @@ print(xc[-1,:])
 ##################################################
 xq = alleged_BFGS(max_iter, f, dfdx,x_start, TEMP_B0, BFGS_alpha)
 
-ax.plot(xq[:, 0], xq[:, 1], 'r-o',label="QN")
+ax.plot(xq[:, 0], xq[:, 1], marker='o', ls='-', label="QN")
 print("BFGS method returns")
 print(xq[-1,:])
 
@@ -122,21 +122,21 @@ print(xq[-1,:])
 qn_soln , qn_iterates = general_rank_1_QN(max_iter,f,dfdx,None,x_start,TEMP_B0)
 print("rank 1 method returns")
 print(qn_soln)
-ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
+ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], marker='o', ls='-', label="QN (1973)")
 ax.legend()
 
 
 qn_2B_soln , qn_2B_iterates = general_rank_2_QN(max_iter,f,dfdx,None,x_start, TEMP_B0)
 print("rank 2 method returns")
 print(qn_2B_soln )
-ax.plot(qn_2B_iterates [:, 0], qn_2B_iterates [:, 1], 'm-o',label="QN2 B (1973)")
+ax.plot(qn_2B_iterates [:, 0], qn_2B_iterates [:, 1], marker='o', ls='-', label="QN2 B (1973)")
 
 MODE = "mccormick"
 qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0))
 # FOR NOISE USE noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]])
 print("rank 1 H method \"{}\" returns".format(MODE))
 print(qn_H1_soln)
-ax.plot(qn_H1_iterates[:, 0], qn_H1_iterates[:, 1], 'm-o',label="QN-H (1973)")
+ax.plot(qn_H1_iterates[:, 0], qn_H1_iterates[:, 1], marker='o', ls='-', label="QN-H (1973)")
 ax.legend()
 
 
@@ -145,7 +145,7 @@ qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,n
 # FOR NOISE USE noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]])
 print("rank 2 H method \"{}\" returns".format(MODE))
 print(qn_H2_soln)
-ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', color='lime',label="QN-H R2 (1973)")
+ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', label="QN-H R2 (1973)")
 ax.legend()
 
 contours = ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
@@ -168,15 +168,15 @@ def compute_residuals(iterates, opt_x):
 fig,ax= plt.subplots()
 ax.set_title("L2-norm between iterate and optimal")
 
-ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN (1973)")
-ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
-ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
+ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method", color="k")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
-ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN (1973)")
+ax.plot(np.arange(0, len(qn_2B_iterates)), compute_residuals(qn_2B_iterates, opt_x), label="QN-B Rank-2 (1973)")
 ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
 ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
 
-ax.plot(np.arange(0, len(qn_2B_iterates)), compute_residuals(qn_2B_iterates, opt_x), label="QN-B Rank-2 (1973)")
 
 
 ax.set_xlabel("Iteration")
@@ -189,14 +189,14 @@ fig,ax= plt.subplots()
 ax.set_title("L2-norm between iterate and optimal")
 ax.set_yscale('log') # Change to log-scale
 
-ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN (1973)")
-ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
-ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
+ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method", color="k")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
-ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN (1973)")
+ax.plot(np.arange(0, len(qn_2B_iterates)), compute_residuals(qn_2B_iterates, opt_x), label="QN-B Rank-2 (1973)")
 ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
 ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
-ax.plot(np.arange(0, len(qn_2B_iterates)), compute_residuals(qn_2B_iterates, opt_x), label="QN-B Rank-2 (1973)")
 
 ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
