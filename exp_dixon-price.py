@@ -41,10 +41,11 @@ hessian = lambda x : jacobian(jacobian(f))(np.array(x).astype(float))
 import scipy.optimize as optimize
 # SOLUTION POSITION
 opt_soln = optimize.minimize(fun= f, x0= np.array([2, 2]), method="Nelder-Mead",jac=dfdx, hess=hessian)
+opt_x = opt_soln.x
+
 print("OPTIMAL IS HERE")
 print(opt_soln.x)
 # print(opt_soln)
-opt_x = opt_soln.x
 
 
 H = hessian(np.array(opt_x)) # Exact 2nd derivatives (hessian)

@@ -21,6 +21,9 @@ step = 0.1
 
 title = "McCormick's Function"
 
+#TODO: fix up newton's method or the bfgs?
+# we can also find the optimum using scipy instead of hardcoding it!
+
 png_prefix = "mccorm_"
 ########## FUNCTION DEFINITION ################
 # define objective function
