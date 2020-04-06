@@ -29,7 +29,13 @@ def NewtonMethod (n, f, dfdx, hessian, x_0):
         # Compute search direction and magnitude (dx)
         #  with dx = -inv(H) * grad
         #delta_xn = np.empty((1, 2))
-        delta_xn = -np.linalg.solve(H, gn)
+        try:
+            delta_xn = -np.linalg.solve(H, gn)
+        except np.linalg.LinAlgError:
+            print("WARNING: Newton's Method Singular Matrix ERROR")
+            for j in range(i + 1, n):
+                xn[j] = xn[i]
+            break
         xn[i+1] = xn[i] + delta_xn
 
     return xn
