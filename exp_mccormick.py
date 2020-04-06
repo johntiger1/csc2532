@@ -8,11 +8,11 @@ import scipy.optimize
 from optimizers import *
 
 ########## PLOTTING PARAMETERS ##########
-ymin = -20
-ymax = 20
+ymin = -2
+ymax = 0.1
 
-xmin = -20
-xmax = 20
+xmin = -0.8
+xmax = 0.2
 
 step = 0.1
 
