@@ -328,18 +328,9 @@ def general_rank_2_QN(k,f,gradient,c,x_0, init_b0=TEMP_B0):
         if not np.any(s_k):
             break
 
-        #noise = np.random.uniform(500, 1000)
-        #noise = np.random.uniform((0,1), size=(2,2,))
-        #print("noise added:")
-        #print(noise)
-        c = y_k
-        #print(c)
-        #c = noise@y_k # fix to a fixed method
-        #print(c)
+
         # compute the next B_{k+1} iteration
         B_k_and_1 = update(B_k, y_k, s_k )
-
-        # add the noise. that is bounded within some quantity.
 
         # update the matrix:
         B_k = B_k_and_1
@@ -353,13 +344,10 @@ def general_rank_2_QN(k,f,gradient,c,x_0, init_b0=TEMP_B0):
 
     return x_k, x_iterates
 
-
-    pass
 qn_2B_soln , qn_2B_iterates = general_rank_2_QN(max_iter,f,dfdx,None,x_start)
-print("rank 1/2 method returns")
+print("rank 2 method returns")
 print(qn_2B_soln )
-ax.plot(qn_2B_iterates [:, 0], qn_2B_iterates [:, 1], 'm-o',label="QN1.5 (1973)")
-ax.legend()
+ax.plot(qn_2B_iterates [:, 0], qn_2B_iterates [:, 1], 'm-o',label="QN2 B (1973)")
 
 
 
@@ -419,7 +407,6 @@ qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(max_iter,f,dfdx,MODE,x_start)
 print("rank 1 H method \"{}\" returns".format(MODE))
 print(qn_H1_soln)
 ax.plot(qn_H1_iterates[:, 0], qn_H1_iterates[:, 1], 'm-o',label="QN-H (1973)")
-ax.legend()
 
 # TODO: Can probably increase efficiency by moving division before outer products
 def rank_2_H_update(H,s,y,d):
@@ -510,6 +497,9 @@ ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's met
 ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
 ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
 
+ax.plot(np.arange(0, len(qn_2B_iterates)), compute_residuals(qn_2B_iterates, opt_x), label="QN-B Rank-2 (1973)")
+
+
 ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
 ax.legend()
@@ -527,10 +517,11 @@ ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD"
 ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
 ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
 ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
+ax.plot(np.arange(0, len(qn_2B_iterates)), compute_residuals(qn_2B_iterates, opt_x), label="QN-B Rank-2 (1973)")
 
 ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
 ax.legend()
 
 fig.savefig(png_prefix+"log iterate residuals")
-#fig.show()
+fig.show()
