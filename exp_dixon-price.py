@@ -3,7 +3,7 @@ import autograd.numpy as np
 from autograd import jacobian 
 import matplotlib.pyplot as plt
 import scipy
-import scipy.optimize
+import scipy.optimize as optimize
 
 '''
 code for an experiment with Dixon Price Function
@@ -39,17 +39,13 @@ hessian = lambda x : jacobian(jacobian(f))(np.array(x).astype(float))
 ########## INITIALIZATION PARAMETERS ##########
 
 # SOLUTION POSITION
-<<<<<<< HEAD
-opt_soln = optimize.minimize(fun= f, x0= np.array([2, 2]), method="Nelder-Mead",jac=dfdx, hess=hessian)
-opt_x = opt_soln.x
+num_opt_soln = optimize.minimize(fun= f, x0= np.array([2, 2]), method="Nelder-Mead",jac=dfdx, hess=hessian)
 
-print("OPTIMAL IS HERE")
-print(opt_soln.x)
+print("Numerical optimal solution:")
+print(num_opt_soln .x)
 # print(opt_soln)
 
-=======
 opt_x = np.array([1, 1/np.sqrt(2)])
->>>>>>> 762561eecd9b9776d69657ed331e09a77a89eceb
 
 H = hessian(np.array(opt_x)) # Exact 2nd derivatives (hessian)
 
