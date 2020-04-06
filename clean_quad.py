@@ -282,6 +282,79 @@ print(qn_soln)
 ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
 ax.legend()
 
+'''
+Code for implementing a general rank 2 update as in Broyden 1973. This is the B formulation. 
+'''
+def general_rank_2_QN(k,f,gradient,c,x_0, init_b0=TEMP_B0):
+
+    # B_0 is our HESSIAN approximation (NOT hessian inverse). This is very critical!
+    B_0 = init_b0
+    counter = 0
+    x_k = x_0
+    B_k = B_0
+    cond = True
+
+    # Initalize the plots
+    x_iterates = np.zeros((k + 1, 2)) + opt_x
+    x_iterates[0] = x_0
+
+    '''
+    Inner function which specifies the update rule
+    '''
+    def update(B_k, y_k, s_k  ):
+        return B_k + np.outer(y_k - np.matmul(B_k, s_k), np.transpose(c) / np.dot(c, s_k))
+        pass
+
+
+    while cond:
+
+        # new iterates
+        search_direction = np.linalg.solve(B_k, gradient(x_k))
+        x_k_and_1  = x_k - search_direction #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
+        # compute k+1 quantities
+        y_k = gradient(x_k_and_1) - gradient(x_k)
+
+        s_k = x_k_and_1 - x_k
+
+        # Terminate if we have converged in finite steps
+        if not np.any(s_k):
+            break
+
+        #noise = np.random.uniform(500, 1000)
+        #noise = np.random.uniform((0,1), size=(2,2,))
+        #print("noise added:")
+        #print(noise)
+        c = y_k
+        #print(c)
+        #c = noise@y_k # fix to a fixed method
+        #print(c)
+        # compute the next B_{k+1} iteration
+        B_k_and_1 = update(B_k, y_k, s_k )
+
+        # add the noise. that is bounded within some quantity.
+
+        # update the matrix:
+        B_k = B_k_and_1
+        x_k = x_k_and_1
+
+        # logic for checking whether to terminate or not
+        not_done = True
+        counter += 1
+        cond = counter < k and not_done
+        x_iterates[counter] = x_k
+
+    return x_k, x_iterates
+
+
+    pass
+qn_2B_soln , qn_2B_iterates = general_rank_2_QN(max_iter,f,dfdx,None,x_start)
+print("rank 1/2 method returns")
+print(qn_2B_soln )
+ax.plot(qn_2B_iterates [:, 0], qn_2B_iterates [:, 1], 'm-o',label="QN1.5 (1973)")
+ax.legend()
+
+
+
 def rank_1_H_update(H,s,y,d):
     return H + np.outer((s-np.matmul(H,y)), d)/np.inner(d,y)
 
@@ -329,6 +402,8 @@ def general_rank_1_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv(TEMP_B0), noise=
         x_iterates[counter] = x_k
 
     return x_k, x_iterates
+
+
 
 MODE = "mccormick"
 qn_H1_soln , qn_H1_iterates = general_rank_1_QN_H(max_iter,f,dfdx,MODE,x_start)
