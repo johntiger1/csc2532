@@ -28,7 +28,7 @@ png_prefix = "dixon-price_"
 ########## FUNCTION DEFINITION ################
 # define objective function
 def f(x):
-    return (x[0]-1)**2  + 1*2*(x[0]**2)**2 + 2*(2*x[1]**2-x[0])**2
+    return (x[0]-1)**2  + 2*(2*(x[1]**2)-x[0])**2
 
 def f_sep(x1,x2):
     return f([x1,x2])
@@ -38,8 +38,8 @@ dfdx = lambda x : jacobian(f)(np.array(x).astype(float))
 hessian = lambda x : jacobian(jacobian(f))(np.array(x).astype(float))
 ########## INITIALIZATION PARAMETERS ##########
 
-import scipy.optimize as optimize
 # SOLUTION POSITION
+<<<<<<< HEAD
 opt_soln = optimize.minimize(fun= f, x0= np.array([2, 2]), method="Nelder-Mead",jac=dfdx, hess=hessian)
 opt_x = opt_soln.x
 
@@ -47,6 +47,9 @@ print("OPTIMAL IS HERE")
 print(opt_soln.x)
 # print(opt_soln)
 
+=======
+opt_x = np.array([1, 1/np.sqrt(2)])
+>>>>>>> 762561eecd9b9776d69657ed331e09a77a89eceb
 
 H = hessian(np.array(opt_x)) # Exact 2nd derivatives (hessian)
 
