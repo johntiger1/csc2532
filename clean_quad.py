@@ -126,69 +126,6 @@ ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], marker='o', ls='-', label="QN (197
 ax.legend()
 
 
-def rank_2_B_update(B,y,s,c):
-    normalizer = np.dot(s,c)
-    temp = np.outer(y - np.matmul(B, s), np.transpose(c))
-    symmetric_term = (temp + np.transpose(temp)) /normalizer
-    residual_term = (np.dot(np.transpose(s), y-np.matmul(B,s) ) * np.outer(c,np.transpose(c)))/np.power(normalizer, 2)
-    return B + symmetric_term - residual_term
-
-'''
-Code for implementing a general rank 2 update as in Broyden 1973. This is the B formulation. 
-'''
-def general_rank_2_QN(k,f,gradient,c,x_0, init_b0=TEMP_B0):
-
-    # B_0 is our HESSIAN approximation (NOT hessian inverse). This is very critical!
-    B_0 = init_b0
-    counter = 0
-    x_k = x_0
-    B_k = B_0
-    cond = True
-
-    # Initalize the plots
-    x_iterates = np.zeros((k + 1, 2)) + opt_x
-    x_iterates[0] = x_0
-
-    '''
-    Inner function which specifies the update rule
-    '''
-    def update(B_k, y_k, s_k  ):
-        return rank_2_B_update(B_k, y_k, s_k, s_k)
-
-    def update(B_k, y_k, s_k  ):
-        return rank_2_B_update(B_k, y_k, s_k, y_k)
-
-    while cond:
-
-        # new iterates
-        search_direction = np.linalg.solve(B_k, gradient(x_k))
-        x_k_and_1  = x_k - search_direction #equiv to finding B^{-1} * grad. equiv again to solving B\delta = grad; for \delta
-        # compute k+1 quantities
-        y_k = gradient(x_k_and_1) - gradient(x_k)
-
-        s_k = x_k_and_1 - x_k
-
-        # Terminate if we have converged in finite steps
-        if not np.any(s_k):
-            break
-
-
-        # compute the next B_{k+1} iteration
-        B_k_and_1 = update(B_k, y_k, s_k )
-
-        # update the matrix:
-        B_k = B_k_and_1
-        x_k = x_k_and_1
-
-        # logic for checking whether to terminate or not
-        not_done = True
-        counter += 1
-        cond = counter < k and not_done
-        x_iterates[counter] = x_k
-
-    return x_k, x_iterates
-
-
 qn_2B_soln , qn_2B_iterates = general_rank_2_QN(max_iter,f,dfdx,None,x_start, TEMP_B0)
 print("rank 2 method returns")
 print(qn_2B_soln )
