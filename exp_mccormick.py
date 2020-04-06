@@ -31,9 +31,15 @@ dfdx = lambda x : jacobian(f)(np.array(x).astype(float))
 
 hessian = lambda x : jacobian(jacobian(f))(np.array(x).astype(float))
 ########## INITIALIZATION PARAMETERS ##########
+# starting from 2,2 [2.5943947  1.59439441]
+# weird: starting from closer: [-0.54719758 -1.54719758]
+num_opt_soln = scipy.optimize.minimize(fun= f, x0= np.array([-0.54719, -1.54719]), method="dogleg",jac=dfdx, hess=hessian)
+
+print("Numerical optimal solution:")
+print(num_opt_soln .x)
 
 # SOLUTION POSITION
-opt_x = np.array([-0.5,-1.5])
+opt_x = num_opt_soln.x
 
 
 H = hessian(np.array(opt_x)) # Exact 2nd derivatives (hessian)
