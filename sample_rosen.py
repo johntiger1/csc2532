@@ -86,12 +86,15 @@ print("F'(x*)^{-1}: {}")
 print(np.linalg.inv(H))
 
 # Start location
-x_start = [-0.05, 0.05]
+x_start = [-3, 3]
 opt_x = np.zeros((2,1))
 
+x_lim = 5
+y_lim = 5
+
 # Design variables at mesh points
-i1 = np.arange(-1.0, 1.0, 0.1)
-i2 = np.arange(-1.0, 1.0, 0.1)
+i1 = np.arange(-x_lim , x_lim , 0.1)
+i2 = np.arange(-y_lim,y_lim, 0.1)
 x1_mesh, x2_mesh = np.meshgrid(i1, i2)
 #f_mesh = x1_mesh ** 2 - 2.0 * x1_mesh * x2_mesh + 4 * x2_mesh ** 2
 
@@ -99,8 +102,8 @@ x1_mesh, x2_mesh = np.meshgrid(i1, i2)
 
 fig, ax = plt.subplots()
 
-plt.ylim(-1, 1)
-plt.xlim(-1, 1)
+plt.ylim(-y_lim, y_lim)
+plt.xlim(-x_lim, x_lim)
 
 # Specify contour lines
 #lines = range(2, 52, 2)
@@ -114,7 +117,7 @@ v_func = np.vectorize(f_sep)    # major key!
 ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
 
 # Add some text to the plot
-ax.set_title('f(x) = x1^2 - 2*x1*x2 + 4*x2^2')
+ax.set_title('Rosenbrock')
 ax.set_xlabel('x1')
 ax.set_ylabel('x2')
 # Show the plot
@@ -138,9 +141,9 @@ ax.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
 # Steepest descent method
 ##################################################
 # Number of iterations
-n = 8
+n = 100
 # Use this alpha for every line search
-alpha = 0.15
+alpha = 0.0001
 # Initialize xs
 xs = np.zeros((n + 1, 2))
 xs[0] = x_start
@@ -151,7 +154,28 @@ for i in range(n):
     #  with dx = - grad but no line searching
     xs[i + 1] = xs[i] - np.dot(alpha, dfdx(xs[i]))
 ax.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
+print("final gd results")
+print(xs[-1])
+fig.legend()
+fig.savefig("gd_only")
+ax.set_title("L2-norm between iterate and optimal")
+ax.set_yscale('log') # Change to log-scale
 
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN (1973)")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
+ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
+ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
+ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
+ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
+
+ax.set_xlabel("Iteration")
+ax.set_ylabel("L2 norm between current estimate and optimal")
+ax.legend()
+
+fig.savefig("log iterate residuals")
+#fig.show()
+exit(0)
 ##################################################
 # Conjugate gradient method
 ##################################################

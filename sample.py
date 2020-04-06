@@ -77,7 +77,9 @@ xn[1] = xn[0] + delta_xn
 ax.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
 
 ##################################################
-# Steepest descent method
+# Steepest descent method.
+
+# ENSURE STEP SIZE IS SMALL, otherwise we may see divergence!
 ##################################################
 # Number of iterations
 n = 8
@@ -96,6 +98,8 @@ ax.plot(xs[:, 0], xs[:, 1], 'g-o', label="GD")
 
 ##################################################
 # Conjugate gradient method
+
+# SIMILARLY, we need ensure the step size is small enough!
 ##################################################
 # Number of iterations
 n = 8
