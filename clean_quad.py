@@ -282,6 +282,14 @@ print(qn_soln)
 ax.plot(qn_iterates[:, 0], qn_iterates[:, 1], 'c-o',label="QN (1973)")
 ax.legend()
 
+
+def rank_2_B_update(B,y,s,c):
+    normalizer = np.dot(s,c)
+    temp = np.outer(y - np.matmul(B, s), np.transpose(c))
+    symmetric_term = (temp + np.transpose(temp)) /normalizer
+    residual_term = (np.dot(np.transpose(s), y-np.matmul(B,s) ) * np.outer(c,np.transpose(c)))/np.power(normalizer, 2)
+    return B + symmetric_term - residual_term
+
 '''
 Code for implementing a general rank 2 update as in Broyden 1973. This is the B formulation. 
 '''
@@ -302,7 +310,7 @@ def general_rank_2_QN(k,f,gradient,c,x_0, init_b0=TEMP_B0):
     Inner function which specifies the update rule
     '''
     def update(B_k, y_k, s_k  ):
-        return B_k + np.outer(y_k - np.matmul(B_k, s_k), np.transpose(c) / np.dot(c, s_k))
+        return rank_2_B_update(B_k, y_k, s_k, s_k)
         pass
 
 
