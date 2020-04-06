@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import scipy
 import scipy.optimize
 
-
+from optimizers import *
 
 ########## RANDOMNESS ##########
 np.random.seed(42)
@@ -95,18 +95,8 @@ ax.set_ylabel('x2')
 ##################################################
 # Newton's method
 ##################################################
-n = max_iter
-xn = np.zeros((n + 1, 2)) + opt_x
-xn[0] = x_start
+xn = NewtonMethod (max_iter, f, dfdx, hessian, x_start) 
 
-for i in range(n):
-    # Get gradient at start location (df/dx or grad(f))
-    gn = dfdx(xn[i])
-    # Compute search direction and magnitude (dx)
-    #  with dx = -inv(H) * grad
-    #delta_xn = np.empty((1, 2))
-    delta_xn = -np.linalg.solve(H, gn)
-    xn[i+1] = xn[i] + delta_xn
 ax.plot(xn[:, 0], xn[:, 1], 'k-o', label="Newton")
 
 print("Newton's method returns")
@@ -116,118 +106,44 @@ print(xn[-1,:])
 ##################################################
 # Conjugate gradient method
 ##################################################
-# Number of iterations
-n = max_iter
-neg = np.array([[-1.0, 0.0], [0.0, -1.0]])
-# Initialize xc
-xc = np.zeros((n + 1, 2)) + opt_x
-xc[0] = x_start
-# Initialize delta_gc
-delta_cg = np.zeros((n + 1, 2))
-# Initialize gc
-gc = np.zeros((n + 1, 2))
-# Get gradient at start location (df/dx or grad(f))
-for i in range(n):
-    gc[i] = dfdx(xc[i])
-    # Compute search direction and magnitude (dx)
-    #  with dx = - grad but no line searching
-    if i == 0:
-        beta = 0
-        delta_cg[i] = - np.dot(CGD_alpha, dfdx(xc[i]))
-    else:
-        beta = np.dot(gc[i], gc[i]) / np.dot(gc[i - 1], gc[i - 1])
-        delta_cg[i] = CGD_alpha * np.dot(neg, dfdx(xc[i])) + beta * delta_cg[i - 1]
-    xc[i + 1] = xc[i] + delta_cg[i]
-ax.plot(xc[:, 0], xc[:, 1], 'y-o',label="CG")
+xc = cgd(max_iter, f, dfdx, x_start, CGD_alpha)
+ax.plot(xc[:, 0], xc[:, 1], marker='o', ls='-', label="CG")
 
 print("Conjugate Gradient method returns")
 print(xc[-1,:])
 
 
-# TODO: Can probably increase efficiency by moving division before outer products
-def rank_2_H_update(H,s,y,d):
-    Hy = np.matmul(H,y)
-    temp = np.outer(s-Hy,d)
-    ddT = np.outer(d,d)
-    dTy = np.inner(d,y)
-    return H + (temp + np.transpose(temp))/dTy - np.inner(y,s-Hy)*ddT/(dTy**2)
-
-"""
-args
-    -k: Max iterations
-    -f: Function to optimize
-    -gradient: gradient of f
-    -d: "greenstadt" for d=y; or "BFGS" for d=s 
-    -x_0: startint x
-    -H_0: starting H
-    -noise: Function from step size to noise, default is no noise
-"""
-def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0 = np.linalg.inv(TEMP_B0), noise=lambda s:0):
-    counter = 0
-    x_k = x_0
-    H_k = H_0
-
-    if d == "greenstadt":
-        def update(H,s,y):
-            return rank_2_H_update(H,s,y,y+noise(s))
-    else:
-        assert(d == "BFGS")
-        def update(H,s,y):
-            return rank_2_H_update(H,s,y,s+noise(s))
-
-    # Initalize the plots
-    x_iterates = np.zeros((k + 1, 2)) + opt_x
-    x_iterates[0] = x_0
-
-    while counter < k:
-        x_k_and_1  = x_k - np.matmul(H_k, gradient(x_k))
-        y_k = gradient(x_k_and_1) - gradient(x_k)
-        s_k = x_k_and_1 - x_k
-
-        # Terminate if we have converged in finite steps
-        if not np.any(s_k):
-            break
-
-        # update the matrix:
-        H_k = update(H_k, s_k, y_k)
-        x_k = x_k_and_1
-
-        counter += 1
-        x_iterates[counter] = x_k
-
-    return x_k, x_iterates
-
 MODE = "BFGS"
-qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start)
+qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0))
 # FOR NOISE USE noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]])
 print("rank 2 H method \"{}\" returns".format(MODE))
 print(qn_H2_soln)
-ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', color='lime',label="QN-H R2 (1973)")
+ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', label="QN-H R2 (1973)")
 ax.legend()
 
 
 # Run bound noise
 qn_H2_bnd_noise = np.zeros((trials,max_iter + 1,2)) + opt_x
 for i in range(trials):
-    _, qn_H2_bnd_noise[i] = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start, noise = bnd_noise)
+    _, qn_H2_bnd_noise[i] = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0), noise = bnd_noise)
 
 
 avg_qn_H2_bnd_noise = np.average(qn_H2_bnd_noise, axis=0)
 print("avg bounded noise rank 2 H method \"{}\" returns".format(MODE))
 print(avg_qn_H2_bnd_noise[-1,:])
-ax.plot(avg_qn_H2_bnd_noise[:, 0], avg_qn_H2_bnd_noise[:, 1], marker='o', ls='-', color='r',label="Avg QN-H R2 Bound Noise")
+ax.plot(avg_qn_H2_bnd_noise[:, 0], avg_qn_H2_bnd_noise[:, 1], marker='o', ls='-',label="Avg QN-H R2 Bound Noise")
 ax.legend()
 
 # Run unbound noise
 qn_H2_unbnd_noise = np.zeros((trials,max_iter + 1,2)) + opt_x
 for i in range(trials):
-    _, qn_H2_unbnd_noise[i] = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start, noise = noise)
+    _, qn_H2_unbnd_noise[i] = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0), noise = noise)
 
 
 avg_qn_H2_unbnd_noise = np.average(qn_H2_unbnd_noise, axis=0)
 print("avg unbounded noise rank 2 H method \"{}\" returns".format(MODE))
 print(avg_qn_H2_unbnd_noise[-1,:])
-ax.plot(avg_qn_H2_unbnd_noise[:, 0], avg_qn_H2_unbnd_noise[:, 1], marker='o', ls='-', color='c',label="Avg QN-H R2 Unbound Noise")
+ax.plot(avg_qn_H2_unbnd_noise[:, 0], avg_qn_H2_unbnd_noise[:, 1], marker='o', ls='-',label="Avg QN-H R2 Unbound Noise")
 ax.legend()
 
 contours = ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
@@ -268,8 +184,8 @@ def compute_residuals(iterates, opt_x):
 fig,ax= plt.subplots()
 ax.set_title("L2-norm between iterate and optimal")
 
+ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method", color='k')
 ax.plot(np.arange(0, len(xc)), compute_residuals(xc, opt_x), label="CG")
-ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
 ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
 ax.plot(np.arange(0, len(avg_qn_H2_bnd_noise)), compute_residuals(avg_qn_H2_bnd_noise, opt_x), label="Avg QN-H Rank-2 Bnd Noise (1973)")
 ax.plot(np.arange(0, len(avg_qn_H2_unbnd_noise)), compute_residuals(avg_qn_H2_unbnd_noise, opt_x), label="Avg QN-H Rank-2 Unbnd Noise (1973)")
@@ -284,8 +200,8 @@ fig,ax= plt.subplots()
 ax.set_title("L2-norm between iterate and optimal")
 ax.set_yscale('log') # Change to log-scale
 
+ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method", color='k')
 ax.plot(np.arange(0, len(xc)), compute_residuals(xc, opt_x), label="CG")
-ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method")
 ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
 ax.plot(np.arange(0, len(avg_qn_H2_bnd_noise)), compute_residuals(avg_qn_H2_bnd_noise, opt_x), label="Avg QN-H Rank-2 Bnd Noise (1973)")
 ax.plot(np.arange(0, len(avg_qn_H2_unbnd_noise)), compute_residuals(avg_qn_H2_unbnd_noise, opt_x), label="Avg QN-H Rank-2 Unbnd Noise (1973)")
