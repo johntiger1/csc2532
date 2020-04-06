@@ -311,8 +311,9 @@ def general_rank_2_QN(k,f,gradient,c,x_0, init_b0=TEMP_B0):
     '''
     def update(B_k, y_k, s_k  ):
         return rank_2_B_update(B_k, y_k, s_k, s_k)
-        pass
 
+    def update(B_k, y_k, s_k  ):
+        return rank_2_B_update(B_k, y_k, s_k, y_k)
 
     while cond:
 
