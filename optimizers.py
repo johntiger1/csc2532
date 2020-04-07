@@ -334,12 +334,13 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0, noise=lambda s:0):
                 break
 
             # update the matrix:
-            bernoulli = np.random.binomial(1, 1)
+            bernoulli = np.random.binomial(1, 0.5)
             # print(bernoulli)
             if bernoulli > 0.5:
                 f.update = update_greenstadt
             else:
                 f.update = update_BFGS
+            H_k = f.update(H_k, s_k, y_k)
             x_k = x_k_and_1
 
             counter += 1
