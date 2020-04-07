@@ -300,6 +300,7 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0, noise=lambda s:0):
     x_k = x_0
     H_k = H_0
 
+    bernoulli = np.random.binomial(1,0.5)
 
     def update_greenstadt(H, s, y):
         return rank_2_H_update(H, s, y, y + noise(s))
@@ -333,15 +334,12 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0, noise=lambda s:0):
                 break
 
             # update the matrix:
-            bernoulli = np.random.binomial(1, 0.5)
+            bernoulli = np.random.binomial(1, 1)
             # print(bernoulli)
             if bernoulli > 0.5:
                 f.update = update_greenstadt
             else:
                 f.update = update_BFGS
-
-            H_k = f.update(H_k, s_k, y_k)
-
             x_k = x_k_and_1
 
             counter += 1
