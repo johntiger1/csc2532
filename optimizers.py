@@ -300,13 +300,19 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0, noise=lambda s:0):
     x_k = x_0
     H_k = H_0
 
+
+    def update_greenstadt(H, s, y):
+        return rank_2_H_update(H, s, y, y + noise(s))
+
+    def update_BFGS(H, s, y):
+        return rank_2_H_update(H, s, y, s + noise(s))
+
     if d == "greenstadt":
-        def update(H,s,y):
-            return rank_2_H_update(H,s,y,y+noise(s))
+        f.update = update_greenstadt
     else:
-        assert(d == "BFGS")
-        def update(H,s,y):
-            return rank_2_H_update(H,s,y,s+noise(s))
+        f.update = update_BFGS
+
+
 
     # Initalize the plots
     x_iterates = np.zeros((k + 1, 2)) 
@@ -314,6 +320,7 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0, noise=lambda s:0):
 
     while counter < k:
         try:
+
             x_k_and_1  = x_k - np.matmul(H_k, gradient(x_k))
             y_k = gradient(x_k_and_1) - gradient(x_k)
             s_k = x_k_and_1 - x_k
@@ -326,7 +333,15 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0, noise=lambda s:0):
                 break
 
             # update the matrix:
-            H_k = update(H_k, s_k, y_k)
+            bernoulli = np.random.binomial(1, 0.5)
+            # print(bernoulli)
+            if bernoulli > 0.5:
+                f.update = update_greenstadt
+            else:
+                f.update = update_BFGS
+
+            H_k = f.update(H_k, s_k, y_k)
+
             x_k = x_k_and_1
 
             counter += 1

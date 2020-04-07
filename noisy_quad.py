@@ -34,7 +34,7 @@ step = 0.01
 
 title = 'f(x) = x1^2 - 2*x1*x2 + 4*x2^2'
 
-png_prefix = "quad1_"
+png_prefix = "rand_quad1_"
 
 ########## FUNCTION DEFINITION ################
 # define objective function
