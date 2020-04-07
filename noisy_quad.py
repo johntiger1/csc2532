@@ -11,7 +11,7 @@ from optimizers import *
 np.random.seed(42)
 trials = 100
 
-noise = lambda s : 100 * np.random.rand(2) - 50
+noise = lambda s : 0
 #noise = lambda s: 10000 * np.random.rand(2) - 5000
 #noise = lambda s : 5000+10000 * np.random.rand(2) - 5000
 
@@ -20,7 +20,7 @@ def normalize(x):
 
 noise_p=2
 noise_C=1
-bnd_noise = lambda s : noise_C * normalize(noise(s))*(np.linalg.norm(s,ord=2)**noise_p)
+bnd_noise = lambda s : 0
 
 
 ########## PLOTTING PARAMETERS ##########
