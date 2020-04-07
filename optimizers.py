@@ -279,6 +279,10 @@ def rank_2_H_update(H,s,y,d):
     temp = np.outer(s-Hy,d)
     ddT = np.outer(d,d)
     dTy = np.inner(d,y)
+
+    if dTy**2 == 0:
+        raise ZeroDivisionError
+
     return H + (temp + np.transpose(temp))/dTy - np.inner(y,s-Hy)*ddT/(dTy**2)
 
 """
@@ -309,23 +313,29 @@ def general_rank_2_QN_H(k,f,gradient,d,x_0, H_0, noise=lambda s:0):
     x_iterates[0] = x_0
 
     while counter < k:
-        x_k_and_1  = x_k - np.matmul(H_k, gradient(x_k))
-        y_k = gradient(x_k_and_1) - gradient(x_k)
-        s_k = x_k_and_1 - x_k
+        try:
+            x_k_and_1  = x_k - np.matmul(H_k, gradient(x_k))
+            y_k = gradient(x_k_and_1) - gradient(x_k)
+            s_k = x_k_and_1 - x_k
 
-        # Terminate if we have converged in finite steps
-        if not np.any(s_k):
-            # Fix rest of iterates to the converged value
-            for j in range(counter, k+1):
-                x_iterates[j] = x_k
+            # Terminate if we have converged in finite steps
+            if not np.any(s_k):
+                # Fix rest of iterates to the converged value
+                for j in range(counter, k+1):
+                    x_iterates[j] = x_k
+                break
+
+            # update the matrix:
+            H_k = update(H_k, s_k, y_k)
+            x_k = x_k_and_1
+
+            counter += 1
+            x_iterates[counter] = x_k
+        except ZeroDivisionError: # Terminate if update undefined (therefore converged)
+            for i in range(counter, k+1):
+                x_iterates[i] = x_k
+            print("WARNING: rank 2 H terminated due to undefined update")
             break
-
-        # update the matrix:
-        H_k = update(H_k, s_k, y_k)
-        x_k = x_k_and_1
-
-        counter += 1
-        x_iterates[counter] = x_k
 
     return x_k, x_iterates
 
