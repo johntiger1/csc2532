@@ -3,6 +3,9 @@ Project repo for csc2532
 
 # Progress
 
+# April 7
+Todo: add starting and ending point markers
+
 # April 2 
 Set up repo and look into building a framework. 
 Should try:
