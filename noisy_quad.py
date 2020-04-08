@@ -9,7 +9,7 @@ from optimizers import *
 
 ########## RANDOMNESS ##########
 np.random.seed(42)
-trials = 100
+trials = 500
 
 noise = lambda s : 100 * np.random.rand(2) - 50
 #noise = lambda s: 10000 * np.random.rand(2) - 5000
@@ -19,18 +19,18 @@ def normalize(x):
     return x / np.linalg.norm(x,ord=2)
 
 noise_p=2
-noise_C=1
+noise_C=125
 bnd_noise = lambda s : noise_C * normalize(noise(s))*(np.linalg.norm(s,ord=2)**noise_p)
 
 
 ########## PLOTTING PARAMETERS ##########
-ymin = -0.25
-ymax = 0.25
+ymin = -0.005
+ymax = 0.005
 
-xmin = -0.25
-xmax = 0.25
+xmin = -0.005
+xmax = 0.005
 
-step = 0.01
+step = 0.0001
 
 title = 'f(x) = x1^2 - 2*x1*x2 + 4*x2^2'
 
@@ -58,14 +58,18 @@ opt_x = np.array([0,0])
 H = hessian(np.array(opt_x)) # Exact 2nd derivatives (hessian)
 
 # STARTING PARAMS
-x_start = np.array([0.25, 0.25]) # For p = 2, C = 1:
+x_start = np.array([0.003, 0.003]) 
+                               # For p = 2, C = 125
+                               # [0.005, 0.005] only just not not nice
+
+                               # For p = 2, C = 1:
                                #[0.5,0.5] seems to work or be on edge; very poor rate
                                #[12.5,12.5] only just doesn't work on 10 trials
                                #[1,1] breaks on around 100 trials
 TEMP_B0 = H + [[0.05,0.05],[0.05,-0.05]] # H_0 is this thing's inverse
 
 # Max iterations
-max_iter = 15
+max_iter = 13
 
 # GD ALPHA
 GD_alpha = 0.1
