@@ -112,15 +112,6 @@ ax.plot(xc[:, 0], xc[:, 1], marker='o', ls='-', label="CG")
 print("Conjugate Gradient method returns")
 print(xc[-1,:])
 
-##################################################
-# Quasi-Newton method
-##################################################
-xq = alleged_BFGS(max_iter, f, dfdx,x_start, TEMP_B0, BFGS_alpha)
-
-ax.plot(xq[:, 0], xq[:, 1], marker='o', ls='-', label="QN")
-print("BFGS method returns")
-print(xq[-1,:])
-
 
 
 
@@ -177,7 +168,6 @@ ax.set_title("L2-norm between iterate and optimal")
 ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method", color="k")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
-ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN-B (1973)")
 ax.plot(np.arange(0, len(qn_2B_iterates)), compute_residuals(qn_2B_iterates, opt_x), label="QN-B Rank-2 (1973)")
 ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
@@ -198,7 +188,6 @@ ax.set_yscale('log') # Change to log-scale
 ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method", color="k")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xs, opt_x), label="GD")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xc, opt_x), label="CG")
-ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(xq, opt_x), label="BFGS")
 ax.plot(np.arange(0, len(qn_iterates)), compute_residuals(qn_iterates, opt_x), label="QN-B (1973)")
 ax.plot(np.arange(0, len(qn_2B_iterates)), compute_residuals(qn_2B_iterates, opt_x), label="QN-B Rank-2 (1973)")
 ax.plot(np.arange(0, len(qn_H1_iterates)), compute_residuals(qn_H1_iterates, opt_x), label="QN-H (1973)")
