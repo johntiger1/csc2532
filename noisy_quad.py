@@ -12,29 +12,20 @@ np.random.seed(42)
 trials = 100
 
 noise = lambda s : 0
-#noise = lambda s: 10000 * np.random.rand(2) - 5000
-#noise = lambda s : 5000+10000 * np.random.rand(2) - 5000
 
-def normalize(x):
-    return x / np.linalg.norm(x,ord=2)
-
-noise_p=2
-noise_C=1
-bnd_noise = lambda s : 0
-
-
+switch_prob = 0.5
 ########## PLOTTING PARAMETERS ##########
-ymin = -0.25
-ymax = 0.25
+ymin = -0.1
+ymax = 0.26
 
-xmin = -0.25
-xmax = 0.25
+xmin = -0.05
+xmax = 0.26
 
 step = 0.01
 
 title = 'f(x) = x1^2 - 2*x1*x2 + 4*x2^2'
 
-png_prefix = "rand_quad1_"
+png_prefix = "rand_quad1_p={}".format(switch_prob)
 
 ########## FUNCTION DEFINITION ################
 # define objective function
@@ -65,7 +56,7 @@ x_start = np.array([0.25, 0.25]) # For p = 2, C = 1:
 TEMP_B0 = H + [[0.05,0.05],[0.05,-0.05]] # H_0 is this thing's inverse
 
 # Max iterations
-max_iter = 15
+max_iter = 12
 
 # GD ALPHA
 GD_alpha = 0.1
@@ -121,36 +112,31 @@ print(xc[-1,:])
 
 
 MODE = "BFGS"
-qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0))
+qn_H2_soln , qn_H2_iterates = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0), 0) #HACK; set to 0 to force BFGS
 # FOR NOISE USE noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]])
 print("rank 2 H method \"{}\" returns".format(MODE))
 print(qn_H2_soln)
-ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', label="QN-H R2 (1973)")
+ax.plot(qn_H2_iterates[:, 0], qn_H2_iterates[:, 1], marker='o', ls='-', label="QN-H R2 (p=0) (1973)")
 ax.legend()
 
-
-# Run bound noise
-qn_H2_bnd_noise = np.zeros((trials,max_iter + 1,2)) + opt_x
-for i in range(trials):
-    _, qn_H2_bnd_noise[i] = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0), noise = bnd_noise)
-
-
-avg_qn_H2_bnd_noise = np.average(qn_H2_bnd_noise, axis=0)
-print("avg bounded noise rank 2 H method \"{}\" returns".format(MODE))
-print(avg_qn_H2_bnd_noise[-1,:])
-ax.plot(avg_qn_H2_bnd_noise[:, 0], avg_qn_H2_bnd_noise[:, 1], marker='o', ls='-',label="Avg QN-H R2 Bound Noise")
+MODE = "greenstadt"
+qn_H2_soln , qn_H2_iteratesg = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0), 1) #HACK; set to 1 to force BFGS
+# FOR NOISE USE noise = lambda s: np.random.multivariate_normal([0,0],[[1,0],[0,1]])
+print("rank 2 H method \"{}\" returns".format(MODE))
+print(qn_H2_soln)
+ax.plot(qn_H2_iteratesg[:, 0], qn_H2_iteratesg[:, 1], marker='o', ls='-', label="QN-H R2 (p=1) (1973)")
 ax.legend()
 
 # Run unbound noise
 qn_H2_unbnd_noise = np.zeros((trials,max_iter + 1,2)) + opt_x
 for i in range(trials):
-    _, qn_H2_unbnd_noise[i] = general_rank_2_QN_H(max_iter,f,dfdx,MODE,x_start,np.linalg.inv(TEMP_B0), noise = noise)
+    _, qn_H2_unbnd_noise[i] = general_rank_2_QN_H(max_iter,f,dfdx,None,x_start,np.linalg.inv(TEMP_B0), switch_prob, noise = noise)
 
 
 avg_qn_H2_unbnd_noise = np.average(qn_H2_unbnd_noise, axis=0)
-print("avg unbounded noise rank 2 H method \"{}\" returns".format(MODE))
+print("avg switching rank 2 H method \"{}\" returns".format(MODE))
 print(avg_qn_H2_unbnd_noise[-1,:])
-ax.plot(avg_qn_H2_unbnd_noise[:, 0], avg_qn_H2_unbnd_noise[:, 1], marker='o', ls='-',label="Avg QN-H R2 Unbound Noise")
+ax.plot(avg_qn_H2_unbnd_noise[:, 0], avg_qn_H2_unbnd_noise[:, 1], marker='o', ls='--',label="Avg QN-H R2 Switching Method (p={})".format(switch_prob))
 ax.legend()
 
 contours = ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
@@ -174,11 +160,10 @@ def plot_trials(data,filename,title):
     #ax.legend()
     contours = ax.contour(x1_mesh, x2_mesh, v_func(x1_mesh, x2_mesh))
     ax.clabel(contours , inline=True, fontsize=8)
-    fig.savefig(png_prefix+filename)
+    fig.savefig(png_prefix+filename+'.png')
     plt.close(fig)
 
-plot_trials(qn_H2_bnd_noise,'_bnd_nse_contour.png',title+" with bounded noise trials")
-plot_trials(qn_H2_unbnd_noise,'_unbd_nse_contour.png',title+" with unbound noise trials")
+plot_trials(qn_H2_unbnd_noise,'_unbd_nse_contour.png',title+" with switching (p={}) trials".format(switch_prob))
 
 # qn_iterates-
 '''
@@ -193,15 +178,15 @@ ax.set_title("L2-norm between iterate and optimal")
 
 ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method", color='k')
 ax.plot(np.arange(0, len(xc)), compute_residuals(xc, opt_x), label="CG")
-ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
-ax.plot(np.arange(0, len(avg_qn_H2_bnd_noise)), compute_residuals(avg_qn_H2_bnd_noise, opt_x), label="Avg QN-H Rank-2 Bnd Noise (1973)")
-ax.plot(np.arange(0, len(avg_qn_H2_unbnd_noise)), compute_residuals(avg_qn_H2_unbnd_noise, opt_x), label="Avg QN-H Rank-2 Unbnd Noise (1973)")
+ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H R2 (p=0) (1973)")
+ax.plot(np.arange(0, len(qn_H2_iteratesg)), compute_residuals(qn_H2_iteratesg, opt_x), label="QN-H R2 (p=1) (1973)")
+ax.plot(np.arange(0, len(avg_qn_H2_unbnd_noise)), compute_residuals(avg_qn_H2_unbnd_noise, opt_x), label="Avg QN-H Rank-2 Switching with p={} (1973)".format(switch_prob), ls='--')
 
 ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
 ax.legend()
 
-fig.savefig(png_prefix+"iterate residuals")
+fig.savefig(png_prefix+"iterate residuals.png")
 
 fig,ax= plt.subplots()
 ax.set_title("L2-norm between iterate and optimal")
@@ -209,15 +194,15 @@ ax.set_yscale('log') # Change to log-scale
 
 ax.plot(np.arange(0, len(xn)), compute_residuals(xn, opt_x), label="Newton's method", color='k')
 ax.plot(np.arange(0, len(xc)), compute_residuals(xc, opt_x), label="CG")
-ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H Rank-2 (1973)")
-ax.plot(np.arange(0, len(avg_qn_H2_bnd_noise)), compute_residuals(avg_qn_H2_bnd_noise, opt_x), label="Avg QN-H Rank-2 Bnd Noise (1973)")
-ax.plot(np.arange(0, len(avg_qn_H2_unbnd_noise)), compute_residuals(avg_qn_H2_unbnd_noise, opt_x), label="Avg QN-H Rank-2 Unbnd Noise (1973)")
+ax.plot(np.arange(0, len(qn_H2_iterates)), compute_residuals(qn_H2_iterates, opt_x), label="QN-H R2 (p=0) (1973)")
+ax.plot(np.arange(0, len(qn_H2_iteratesg)), compute_residuals(qn_H2_iteratesg, opt_x), label="QN-H R2 (p=1) (1973)")
+ax.plot(np.arange(0, len(avg_qn_H2_unbnd_noise)), compute_residuals(avg_qn_H2_unbnd_noise, opt_x), label="Avg QN-H Rank-2 Switching with p={} (1973)".format(switch_prob), ls='--')
 
 ax.set_xlabel("Iteration")
 ax.set_ylabel("L2 norm between current estimate and optimal")
 ax.legend()
 
-fig.savefig(png_prefix+"log iterate residuals")
+fig.savefig(png_prefix+"log iterate residuals.png")
 #fig.show()
 plt.close(fig)
 
@@ -231,8 +216,7 @@ def plot_residual_trials(data,filename,title):
         #ax.plot(data[i,:, 0], data[i,:, 1], marker='o', ls='-',label="{} {}".format(label, i))
         ax.plot(np.arange(0, max_iter+1), compute_residuals(data[i,:,:], opt_x))
     #ax.legend()
-    fig.savefig(png_prefix+filename)
+    fig.savefig(png_prefix+filename+'.png')
     plt.close(fig)
 
-plot_residual_trials(qn_H2_unbnd_noise,'_unbd_nse_iter.png',"L2-norm between unbounded noise iterate and optimal")
-plot_residual_trials(qn_H2_bnd_noise,'_bd_nse_iter.png',"L2-norm between bounded noise iterate and optimal")
+plot_residual_trials(qn_H2_unbnd_noise,'_unbd_nse_iter.png',"L2-norm between switching (p={}) iterate and optimal".format(switch_prob))
